@@ -1,4 +1,4 @@
-/* xchainkeys 0.1 -- chained keybindings for X11
+/* xchainkeys 0.1 -- exclusive keychains for X11
  * Copyright (C) 2010 Henning Bekel <h.bekel@googlemail.com>
  *
  * This program is free software; you can redistribute it and/or
@@ -17,21 +17,100 @@
  * 02110-1301, USA.
 */
 
-#include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
+#include <stdio.h>
 #include <errno.h>
-#include <unistd.h>
 #include <getopt.h>
-#include <sys/time.h>
-#include <sys/wait.h>
 #include <X11/Xlib.h>
 
-void version(void) {
-  printf("xchainkeys 0.1 Copyright (C) 2010 Henning Bekel <h.bekel@googlemail.com>\n");
+#include "xchainkeys.h"
+
+XChainKeys_t *xc;
+
+void* xc_create(Display *display) {
+  XChainKeys_t *self = (XChainKeys_t *) calloc(1, sizeof(XChainKeys_t)); 
+  self->display = display;
+  self->debug = False;
+  return self;
+}
+
+void xc_version(XChainKeys_t *self) {
+  printf("xchainkeys %s Copyright (C) 2010 Henning Bekel <%s>\n",
+	 PACKAGE_VERSION, PACKAGE_BUGREPORT);
+}
+
+void xc_usage(XChainKeys_t *self) {
+  printf("Usage: xchainkeys [options]\n\n");
+  printf("  -d, --debug   : Enable debug messages\n");
+  printf("  -h, --help    : Print this help text\n");
+  printf("  -v, --version : Print version information\n");
+  printf("\n");
+}
+
+void xc_mainloop(XChainKeys_t *self) {
+  printf("xc_mainloop: not implemented\n"); 
+}
+
+void xc_destroy(XChainKeys_t *self) {
+  free(self);
 }
 
 int main(int argc, char **argv) {
-  version();
+
+  Display *display;
+
+  struct option options[] = {
+    { "debug", no_argument, NULL, 'd' },
+    { "help", no_argument, NULL, 'h' },
+    { "version", no_argument, NULL, 'v' },
+    { 0, 0, 0, 0 },
+  };
+  int option, option_index;
+
+  /* try to open the x display */
+  if (NULL==(display=XOpenDisplay(NULL))) {
+    perror(argv[0]);
+    exit(EXIT_FAILURE);
+  }
+
+  /* create XChainkeys instance */
+  xc = xc_create(display);
+ 
+  /* parse command line arguments */
+  while (1) {
+
+    option = getopt_long(argc, argv, "dhv", options, &option_index);
+    
+    switch (option) {
+
+    case 'd':
+      xc->debug = True;
+      break;
+      
+    case 'h':
+      xc_usage(xc);
+      exit(EXIT_SUCCESS);
+      break;
+      
+    case 'v':
+      xc_version(xc);
+      exit(EXIT_SUCCESS);
+      break;      
+
+    case -1:
+      break;
+
+    default:
+      xc_usage(xc);
+      exit(EXIT_FAILURE);
+      break;
+    }
+    if(option == -1)
+      break;
+  }
+
+  /* enter mainloop */
+  xc_mainloop(xc);
+
   exit(EXIT_SUCCESS);
 }
