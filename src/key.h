@@ -2,7 +2,7 @@
 #define KEY_H
 
 typedef struct Key {
-  unsigned int modmask;
+  unsigned int modifiers;
   KeyCode keycode;
 } Key_t;
 

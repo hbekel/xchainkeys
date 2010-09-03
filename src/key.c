@@ -45,7 +45,7 @@ int key_parse_keyspec(Key_t *self, char *keyspec) {
   ret = key_set_keycode(self, keyspec);
   
   if (xc->debug)
-    fprintf(stderr, "Key: parse_keyspec: %#x %#x\n", self->modmask, self->keycode);
+    fprintf(stderr, "Key: parse_keyspec: %#x %#x\n", self->modifiers, self->keycode);
 
   return ret;
 }
@@ -54,22 +54,45 @@ int key_add_modifier(Key_t *self, char *str) {
   
   if (xc->debug) fprintf(stderr, "Key: add_modifier %s\n", str);
 
-  if( strcmp(str, "C") == 0 ) {
-    self->modmask |= ControlMask;
+  if( strcmp(str, "shift") == 0 || strcmp(str, "S") == 0) {
+    self->modifiers |= ShiftMask;
     return 1;
   }
-  if( strcmp(str, "A") == 0 ) {
-    self->modmask |= Mod1Mask;
+
+  if( strcmp(str, "lock") == 0 || strcmp(str, "L") == 0) {
+    self->modifiers |= LockMask;
     return 1;
   }
-  if( strcmp(str, "W") == 0) {
-    self->modmask |= Mod4Mask;
+
+  if( strcmp(str, "control") == 0 || strcmp(str, "C") == 0) {
+    self->modifiers |= ControlMask;
     return 1;
   }
-  if( strcmp(str, "S") == 0) {
-    self->modmask |= ShiftMask;
+
+  if( strcmp(str, "mod1") == 0 || strcmp(str, "A") == 0 ) {
+    self->modifiers |= Mod1Mask;
     return 1;
   }
+  if( strcmp(str, "mod2") == 0 || strcmp(str, "N") == 0 ) {
+    self->modifiers |= Mod2Mask;
+    return 1;
+  }
+
+  if( strcmp(str, "mod3") == 0 ) {
+    self->modifiers |= Mod3Mask;
+    return 1;
+  }
+
+  if( strcmp(str, "mod4") == 0 || strcmp(str, "W") == 0) {
+    self->modifiers |= Mod4Mask;
+    return 1;
+  }
+
+  if( strcmp(str, "mod5") == 0 || strcmp(str, "I") == 0) {
+    self->modifiers |= Mod4Mask;
+    return 1;
+  }
+
   return 0;
 }
 
@@ -88,10 +111,21 @@ int key_set_keycode(Key_t *self, char *str) {
 }
 
 int key_equals(Key_t *self, Key_t *key) {
-  if(self->modmask == key->modmask &&
+  if(self->modifiers == key->modifiers &&
      self->keycode == key->keycode)
     return 1;
   return 0;
+}
+
+void key_grab(Key_t *self) {
+  XGrabKey(xc->display, self->keycode, self->modifiers, 
+	   DefaultRootWindow(xc->display), 0,
+	   GrabModeSync, GrabModeSync);
+}
+
+void key_ungrab(Key_t *self) {
+  XUngrabKey(xc->display, self->keycode, self->modifiers, 
+	   DefaultRootWindow(xc->display));
 }
 
 char *key_to_str(Key_t *self) {
@@ -100,10 +134,14 @@ char *key_to_str(Key_t *self) {
 
   char *str = (char *) calloc(512, sizeof(char));
 
-  if (self->modmask & ControlMask) strcat(str, "C-");
-  if (self->modmask & ShiftMask)   strcat(str, "S-");
-  if (self->modmask & Mod1Mask)    strcat(str, "A-");
-  if (self->modmask & Mod4Mask)    strcat(str, "W-");
+  if (self->modifiers & ShiftMask)   strcat(str, "S-");
+  if (self->modifiers & ControlMask) strcat(str, "C-");
+  if (self->modifiers & LockMask)   strcat(str, "L-");
+  if (self->modifiers & Mod1Mask)    strcat(str, "A-");
+  if (self->modifiers & Mod2Mask)    strcat(str, "N-");
+  if (self->modifiers & Mod3Mask)    strcat(str, "mod3-");
+  if (self->modifiers & Mod4Mask)    strcat(str, "W-");
+  if (self->modifiers & Mod5Mask)    strcat(str, "I-");
 
   strcat(str, XKeysymToString(XKeycodeToKeysym(xc->display, self->keycode, 0)));
 
