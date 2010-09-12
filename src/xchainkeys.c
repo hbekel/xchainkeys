@@ -19,7 +19,6 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <stdarg.h>
 #include <string.h>
 #include <errno.h>
 #include <getopt.h>
@@ -33,10 +32,32 @@ XChainKeys_t *xc;
 
 XChainKeys_t* xc_new(Display *display) {
   XChainKeys_t *self = (XChainKeys_t *) calloc(1, sizeof(XChainKeys_t)); 
+  unsigned int i, num, caps, scroll;
+
   self->display = display;
   self->debug = False;
   self->root = binding_new();
   self->root->action = ":root";
+
+  self->xmodmap = XGetModifierMapping(self->display);
+
+  i = 0;
+  num = 
+    xc_keycode_to_modmask(self, XKeysymToKeycode(self->display, XStringToKeysym("Num_Lock")));
+  caps = 
+    xc_keycode_to_modmask(self, XKeysymToKeycode(self->display, XStringToKeysym("Caps_Lock")));
+  scroll = 
+    xc_keycode_to_modmask(self, XKeysymToKeycode(self->display, XStringToKeysym("Scoll_Lock")));
+
+  self->modmask[i++] = 0;
+  self->modmask[i++] = num;
+  self->modmask[i++] = caps;
+  self->modmask[i++] = scroll;
+  self->modmask[i++] = num | caps;
+  self->modmask[i++] = num | scroll;
+  self->modmask[i++] = caps | scroll;
+  self->modmask[i++] = num | caps | scroll;
+
   return self;
 }
 
@@ -88,7 +109,7 @@ void xc_parse_config(XChainKeys_t *self, char *path) {
     if( line[strlen(line)-1] == '\n' )
       line[strlen(line)-1] = '\0';
     
-    if (self->debug) fprintf(stderr, "%s\n", line);
+    /* if (self->debug) fprintf(stderr, "%s\n", line); */
 
     pos = 0;
     parent = xc->root;
@@ -108,7 +129,7 @@ void xc_parse_config(XChainKeys_t *self, char *path) {
       if( token[0] == ':' )
 	expect = "action";
 
-      if (self->debug) fprintf(stderr, "%d: (expect %s) '%s'\n", pos, expect, token);
+      /* if (self->debug) fprintf(stderr, "%d: (expect %s) '%s'\n", pos, expect, token); */
 
       if (strcmp(expect, "key") == 0) {
 	if ((key = key_new(token)) != NULL) {
@@ -182,11 +203,84 @@ void xc_parse_config(XChainKeys_t *self, char *path) {
       }
     }
   }
-  if (self->debug) binding_list(self->root);
+  if (self->debug) {
+    binding_list(self->root);
+    fprintf(stderr, "\n");
+  }
 }
 
 void xc_mainloop(XChainKeys_t *self) {
-  if (self->debug) fprintf(stderr, "xc_mainloop: not implemented\n"); 
+  Binding_t *binding;
+  XEvent event;
+  KeyCode keycode;
+  int i;
+
+  /* grab top level keys individually */
+  for (i=0; i<self->root->num_children; i++) {
+    binding = self->root->children[i];
+    key_grab(binding->key);    
+  }
+  while(True) {
+    XNextEvent(self->display, &event);
+
+    if (event.type == KeyPress) {
+      keycode = ((XKeyPressedEvent*)&event)->keycode;
+      
+      for( i=0; i<self->root->num_children; i++ ) {
+	binding = self->root->children[i];
+	
+	if (binding->key->keycode == keycode) {
+	  if(binding->key->modifiers == xc_get_modifiers(xc)) {
+	    binding_activate(binding);
+	    break;
+	  }
+	}
+      }
+    }
+  }
+}
+
+int xc_keycode_to_modmask(XChainKeys_t *self, KeyCode keycode) {
+
+  int i = 0;
+  int j = 0;
+  int max = self->xmodmap->max_keypermod;
+
+  for (i = 0; i < 8; i++) {
+    for (j = 0; j < max && self->xmodmap->modifiermap[(i * max) + j]; j++) {
+      if (keycode == self->xmodmap->modifiermap[(i * max) + j]) {
+        switch (i) {
+          case ShiftMapIndex: return ShiftMask; break;
+          case LockMapIndex: return LockMask; break;
+          case ControlMapIndex: return ControlMask; break;
+          case Mod1MapIndex: return Mod1Mask; break;
+          case Mod2MapIndex: return Mod2Mask; break;
+          case Mod3MapIndex: return Mod3Mask; break;
+          case Mod4MapIndex: return Mod4Mask; break;
+          case Mod5MapIndex: return Mod5Mask; break;
+        }
+      } 
+    } 
+  } 
+  return 0;
+}
+
+unsigned int xc_get_modifiers(XChainKeys_t *self) {
+
+  char keymap[32]; 
+  unsigned int keycode;
+  unsigned int modifiers = 0;
+
+  XQueryKeymap(self->display, keymap);
+
+  for (keycode = 0; keycode < 256; keycode++) {
+    if ((keymap[(keycode / 8)] & (1 << (keycode % 8))) \
+        && xc_keycode_to_modmask(self, keycode)) {
+
+      modifiers |= xc_keycode_to_modmask(self, keycode);
+    }
+  }
+  return modifiers;
 }
 
 void xc_destroy(XChainKeys_t *self) {
@@ -248,7 +342,7 @@ int main(int argc, char **argv) {
   }
 
   /* parse config file */
-  xc_parse_config(xc, "/home/chenno/workspace/xchainkeys/example.conf");
+  xc_parse_config(xc, "/home/chenno/workspace/xchainkeys/test.conf");
 
   /* enter mainloop */
   xc_mainloop(xc);

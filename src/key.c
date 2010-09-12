@@ -44,16 +44,11 @@ int key_parse_keyspec(Key_t *self, char *keyspec) {
   /* keyspec now contains the keysym string */
   ret = key_set_keycode(self, keyspec);
   
-  if (xc->debug)
-    fprintf(stderr, "Key: parse_keyspec: %#x %#x\n", self->modifiers, self->keycode);
-
   return ret;
 }
 
 int key_add_modifier(Key_t *self, char *str) {
   
-  if (xc->debug) fprintf(stderr, "Key: add_modifier %s\n", str);
-
   if( strcmp(str, "shift") == 0 || strcmp(str, "S") == 0) {
     self->modifiers |= ShiftMask;
     return 1;
@@ -99,9 +94,6 @@ int key_add_modifier(Key_t *self, char *str) {
 int key_set_keycode(Key_t *self, char *str) {
   KeySym keysym;
 
-  if (xc->debug)
-    fprintf(stderr, "Key: set_keycode %s\n", str);
-
   keysym = XStringToKeysym(str);
   if( keysym == NoSymbol )
     return 0;
@@ -118,12 +110,15 @@ int key_equals(Key_t *self, Key_t *key) {
 }
 
 void key_grab(Key_t *self) {
+  int i;
 
   if(xc->debug) fprintf(stderr, "Grabbing key %s\n", key_to_str(self));
-
-  XGrabKey(xc->display, self->keycode, self->modifiers, 
-	   DefaultRootWindow(xc->display), False,
-	   GrabModeAsync, GrabModeAsync);
+  
+  for( i=0; i<8; i++ ) {
+    XGrabKey(xc->display, self->keycode, self->modifiers | xc->modmask[i], 
+	     DefaultRootWindow(xc->display), False,
+	     GrabModeAsync, GrabModeAsync);
+  }
 }
 
 void key_ungrab(Key_t *self) {
