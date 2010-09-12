@@ -247,7 +247,7 @@ void binding_list(Binding_t *self) {
     current = current->parent;      
   }
   for( i=1; i<depth; i++ )
-    fprintf(stderr, "  ");
+    fprintf(stderr, "    ");
 
   if(depth > 0) 
     fprintf(stderr, "%s %s %s\n",

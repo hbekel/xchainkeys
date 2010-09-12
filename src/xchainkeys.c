@@ -80,9 +80,10 @@ void xc_usage(XChainKeys_t *self) {
   printf("\n");
 }
 
-void xc_parse_config(XChainKeys_t *self, char *path) {
+void xc_parse_config(XChainKeys_t *self) {
 
   FILE *config;
+  char *path = calloc(1, 4096);
   char buffer[4096];
   char argument[4096];
   char *line, *token, *expect;
@@ -93,13 +94,28 @@ void xc_parse_config(XChainKeys_t *self, char *path) {
   Binding_t *binding;
   Binding_t *parent;
 
+  /* determine config file path */
+  strcpy(path, getenv("HOME"));
+  
+  if(getenv("XDG_CONFIG_HOME") != NULL ) {
+    strcpy(path, strdup(getenv("XDG_CONFIG_HOME")));
+    strcat(path, "/xchainkeys/xchainkeys.conf");
+  } 
+  else {
+    strcat(path, "/.config/xchainkeys/xchainkeys.conf");
+  }
+
+  /* try to open config file */
   config = fopen(path, "r");
   
   if(config == NULL) {
-    fprintf(stderr, "error '%s': %s\n", path, strerror(errno));
+    fprintf(stderr, "error: '%s': %s\n", path, strerror(errno));
     exit(EXIT_FAILURE);
   }
 
+  if (self->debug) fprintf(stderr, "Using config file %s\n\n", path);
+
+  /* parse file */
   while(fgets(buffer, 4096, config) != NULL) {
     linenum++;
     line = buffer;
@@ -252,6 +268,10 @@ void xc_mainloop(XChainKeys_t *self) {
 	
 	if (binding->key->keycode == keycode) {
 	  if(binding->key->modifiers == xc_get_modifiers(xc)) {
+
+	    popup_hide(xc->popup);
+	    xc->popup->timeout = 0;
+	    
 	    binding_activate(binding);
 	    break;
 	  }
@@ -380,6 +400,7 @@ int main(int argc, char **argv) {
 
     case 'd':
       xc->debug = True;
+      xc_version(xc);
       break;
       
     case 'h':
@@ -410,7 +431,7 @@ int main(int argc, char **argv) {
   }
 
   /* parse config file */
-  xc_parse_config(xc, "/home/chenno/workspace/xchainkeys/test.conf");
+  xc_parse_config(xc);
 
   /* enter mainloop */
   xc_mainloop(xc);
