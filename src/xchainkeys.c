@@ -22,25 +22,30 @@
 #include <string.h>
 #include <errno.h>
 #include <getopt.h>
+#include <sys/time.h>
 #include <X11/Xlib.h>
 
 #include "key.h"
 #include "binding.h"
+#include "popup.h"
 #include "xchainkeys.h"
 
 XChainKeys_t *xc;
 
 XChainKeys_t* xc_new(Display *display) {
-  XChainKeys_t *self = (XChainKeys_t *) calloc(1, sizeof(XChainKeys_t)); 
+
+  XChainKeys_t *self;
   unsigned int i, num, caps, scroll;
+
+  self = (XChainKeys_t *) calloc(1, sizeof(XChainKeys_t)); 
 
   self->display = display;
   self->debug = False;
   self->root = binding_new();
   self->root->action = ":root";
-
+  self->popup = popup_new(self->display, "fixed");
   self->xmodmap = XGetModifierMapping(self->display);
-
+  
   i = 0;
   num = 
     xc_keycode_to_modmask(self, XKeysymToKeycode(self->display, XStringToKeysym("Num_Lock")));
@@ -213,6 +218,7 @@ void xc_mainloop(XChainKeys_t *self) {
   Binding_t *binding;
   XEvent event;
   KeyCode keycode;
+  long now;
   int i;
 
   /* grab top level keys individually */
@@ -220,7 +226,21 @@ void xc_mainloop(XChainKeys_t *self) {
     binding = self->root->children[i];
     key_grab(binding->key);    
   }
+
   while(True) {
+
+    while(!XPending(self->display)) {      
+      if(xc->popup->timeout == 0)
+	break;
+      
+      now = xc_get_msec();
+      
+      if(now >= xc->popup->timeout) {
+	popup_hide(xc->popup);
+	xc->popup->timeout = 0;
+      }
+    }
+    
     XNextEvent(self->display, &event);
 
     if (event.type == KeyPress) {
@@ -283,8 +303,12 @@ unsigned int xc_get_modifiers(XChainKeys_t *self) {
   return modifiers;
 }
 
-void xc_destroy(XChainKeys_t *self) {
-  free(self);
+long xc_get_msec() {
+  long msec;
+  struct timeval tv;
+  gettimeofday(&tv, NULL);
+  msec = (long)(tv.tv_sec*1000 + (tv.tv_usec/1000));
+  return msec;
 }
 
 int main(int argc, char **argv) {

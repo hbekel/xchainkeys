@@ -1,6 +1,7 @@
 #ifndef XCHAINKEYS_H
 #define XCHAINKEYS_H
 
+#define XC_POPUP_DELAY 1000
 #define XC_TIMEOUT 3000
 
 typedef struct XChainKeys {
@@ -8,6 +9,7 @@ typedef struct XChainKeys {
   XModifierKeymap *xmodmap;
   int modmask[8];
   int debug;
+  struct Popup *popup;
   struct Binding *root;
 } XChainKeys_t;
 
@@ -18,6 +20,6 @@ void xc_parse_config(XChainKeys_t *self, char *path);
 void xc_mainloop(XChainKeys_t *self);
 int xc_keycode_to_modmask(XChainKeys_t *self, KeyCode keycode);
 unsigned int xc_get_modifiers(XChainKeys_t *self);
-void xc_destroy(XChainKeys_t *self);
+long xc_get_msec();
 
 #endif /* ifndef XCHAINKEYS_H */

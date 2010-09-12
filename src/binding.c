@@ -7,6 +7,7 @@
 
 #include "key.h"
 #include "binding.h"
+#include "popup.h"
 #include "xchainkeys.h"
 
 extern XChainKeys_t *xc;
@@ -77,65 +78,98 @@ void binding_enter(Binding_t *self) {
   Key_t *key;
   char *keystr;
   int done = False;
+  long now, timeout, delay;
+  char *path = binding_to_path(self);
+
+  // prepare timeout and popup delay
+  now = xc_get_msec();
+  delay = now + XC_POPUP_DELAY;
+  timeout = xc_get_msec() + XC_TIMEOUT;
+
+  // prepare popup
+  snprintf(xc->popup->text, strlen(path)+1, "%s", path);
+
+  if(xc->popup->mapped)
+    popup_show(xc->popup);
 
   // get exclusive grab on keyboard...
   if (self->parent == xc->root) {
     XGrabKeyboard(xc->display, DefaultRootWindow(xc->display),
 		  True, GrabModeAsync, GrabModeAsync, CurrentTime);
-
-    if (xc->debug) fprintf(stderr, "Keyboard grabbed...\n");
   }
 
-  while(!done) {
-    // wait for events, timeout after XC_TIMEOUT msecs
-    XNextEvent(xc->display, &event);
+  while(!done) {    
+    now = xc_get_msec();
 
-    // dispatch exec, abort or escape  
-    switch(event.type) {
-    case KeyPress:
+    // show popup after delay
+    if(now >= delay)
+      popup_show(xc->popup);
 
-      // get keycode and keystr
-      keycode = ((XKeyPressedEvent*)&event)->keycode;
-      keystr = XKeysymToString(XKeycodeToKeysym(xc->display, keycode, 0));
-
-      // check if this key is a modifier 
-      if (xc_keycode_to_modmask(xc, keycode) != 0) {
-	if (xc->debug) fprintf(stderr, "Modifier pressed: %s\n", keystr);
-	break;
-      }      
-      else {	
-	// non-modifier key hit...
-	key = key_new(keystr);
-	key->modifiers = xc_get_modifiers(xc);
+    // abort on timeout
+    if(now >= timeout) {
+      if (xc->debug) fprintf(stderr, "Timed out\n");
+      done = 1;
+      continue;
+    }
+    
+    // look for key press events...
+    if(XPending(xc->display)) {
+      XNextEvent(xc->display, &event);
+      
+      // dispatch exec, abort or escape  
+      switch(event.type) {
+      case KeyPress:
 	
-	if (xc->debug) fprintf(stderr, "Key pressed: %s\n", key_to_str(key));	
+	// get keycode and keystr
+	keycode = ((XKeyPressedEvent*)&event)->keycode;
+	keystr = XKeysymToString(XKeycodeToKeysym(xc->display, keycode, 0));
 	
-	// check if this key is bound in this keymap
-	if( (binding = binding_get_child_by_key(self, key)) != NULL) {
+	// check if this key is a modifier 
+	if (xc_keycode_to_modmask(xc, keycode) != 0) {
+	  break;
+	}      
+	else {	
+	  // non-modifier key hit...
+	  key = key_new(keystr);
+	  key->modifiers = xc_get_modifiers(xc);
+	  
+	  // check if this key is bound in this keymap
+	  if( (binding = binding_get_child_by_key(self, key)) != NULL) {
+	    
+	    // activate the binding
+	    binding_activate(binding);
+	  }
+	  else {
+	    sprintf(xc->popup->text, "%s %s : no binding", path, key_to_str(key));
+	    popup_show(xc->popup);
+	    popup_set_timeout(xc->popup, XC_POPUP_DELAY);
 
-	  // activate the binding
-	  binding_activate(binding);
+	    if (xc->debug) 
+	      fprintf(stderr, " -> %s %s: no binding\n", path, key_to_str(key));
+	  }	
+	  // done, exit this keymap
+	  done = True;
+	  break;
 	}
-	else {
-	  if (xc->debug) fprintf(stderr, "No binding!\n");
-	}	
-	// done, exit this keymap
-	done = True;
-	break;
+	free(key);
       }
-      free(key);
     }
   }
 
   // ungrab keyboard...
   if (self->parent == xc->root) {
     XUngrabKeyboard(xc->display, CurrentTime);
-    if (xc->debug) fprintf(stderr, "Keyboard ungrabbed...\n");
   }
+
+  // hide popup if no timeout is set for it
+  if(xc->popup->timeout == 0)
+    popup_hide(xc->popup);
+
+  free(path);
 }
 
 void binding_abort(Binding_t *self) {
-   if (xc->debug) fprintf(stderr, "Abort!\n");
+   if (xc->debug) fprintf(stderr, "Aborted\n");
 }
 
 void binding_escape(Binding_t *self) {
@@ -149,6 +183,10 @@ void binding_escape(Binding_t *self) {
 
   XUngrabKeyboard(xc->display, CurrentTime);
   XGetInputFocus(xc->display, &focused, &focus_ret);
+
+  if (xc->debug) 
+    fprintf(stderr, "Sending synthetic KeyPressEvent (%s) to window id %d\n", 
+	    key_to_str(self->parent->key), (int)focused);
 	    
   e.display = xc->display;
   e.subwindow = None;
@@ -167,8 +205,6 @@ void binding_exec(Binding_t *self) {
   pid_t pid;
   char *command = self->argument;
 
-  if (xc->debug) fprintf (stderr, "Spawning %s\n", command);
-  
   if (!(pid = fork())) {
     setsid();
     switch (fork())
