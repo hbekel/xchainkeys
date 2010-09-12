@@ -118,9 +118,12 @@ int key_equals(Key_t *self, Key_t *key) {
 }
 
 void key_grab(Key_t *self) {
+
+  if(xc->debug) fprintf(stderr, "Grabbing key %s\n", key_to_str(self));
+
   XGrabKey(xc->display, self->keycode, self->modifiers, 
-	   DefaultRootWindow(xc->display), 0,
-	   GrabModeSync, GrabModeSync);
+	   DefaultRootWindow(xc->display), False,
+	   GrabModeAsync, GrabModeAsync);
 }
 
 void key_ungrab(Key_t *self) {
