@@ -197,6 +197,7 @@ void binding_escape(Binding_t *self) {
   e.keycode = self->parent->key->keycode;
   e.state = self->parent->key->modifiers;
   e.type = KeyPress;
+  
   XSendEvent(xc->display, e.window, True, KeyPressMask, (XEvent *)&e);
   XSync(xc->display, False);
 }

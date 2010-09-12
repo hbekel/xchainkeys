@@ -3,7 +3,7 @@
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of the
+ * published by the Free Software Foundation; either version 3 of the
  * License, or (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but
@@ -14,8 +14,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
- * 02110-1301, USA.
-*/
+ * 02110-1301, USA.  
+ */
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -76,6 +76,7 @@ void xc_usage(XChainKeys_t *self) {
   printf("  -d, --debug   : Enable debug messages\n");
   printf("  -h, --help    : Print this help text\n");
   printf("  -v, --version : Print version information\n");
+  printf("  -k, --keys    : Show keys\n");
   printf("\n");
 }
 
@@ -260,6 +261,43 @@ void xc_mainloop(XChainKeys_t *self) {
   }
 }
 
+void xc_show_keys(XChainKeys_t *self) {
+
+  XEvent event;
+  Key_t *key;
+  KeyCode keycode;
+  char *keystr;
+
+  printf("Showing key combinations, press 'q' to quit\n");
+  
+  XGrabKeyboard(self->display, DefaultRootWindow(self->display),
+		True, GrabModeAsync, GrabModeAsync, CurrentTime);
+
+  while(True) {
+    XNextEvent(self->display, &event);
+    switch(event.type) {
+    case KeyPress:
+      
+      keycode = ((XKeyPressedEvent*)&event)->keycode;
+      keystr = XKeysymToString(XKeycodeToKeysym(self->display, keycode, 0));
+      
+      if (xc_keycode_to_modmask(xc, keycode) != 0) 
+	continue;
+      
+      if ( strcmp(keystr, "q") == 0 && xc_get_modifiers(self) == 0 ) {
+	XUngrabKeyboard(self->display, CurrentTime);
+	return;
+      }
+      
+      key = key_new(keystr);
+      key->modifiers = xc_get_modifiers(self);
+      
+      printf("%s\n", key_to_str(key));
+      free(key);
+    }
+  }
+}
+
 int xc_keycode_to_modmask(XChainKeys_t *self, KeyCode keycode) {
 
   int i = 0;
@@ -319,6 +357,7 @@ int main(int argc, char **argv) {
     { "debug", no_argument, NULL, 'd' },
     { "help", no_argument, NULL, 'h' },
     { "version", no_argument, NULL, 'v' },
+    { "keys", no_argument, NULL, 'k' },
     { 0, 0, 0, 0 },
   };
   int option, option_index;
@@ -335,7 +374,7 @@ int main(int argc, char **argv) {
   /* parse command line arguments */
   while (1) {
 
-    option = getopt_long(argc, argv, "dhv", options, &option_index);
+    option = getopt_long(argc, argv, "dhvk", options, &option_index);
     
     switch (option) {
 
@@ -350,6 +389,11 @@ int main(int argc, char **argv) {
       
     case 'v':
       xc_version(xc);
+      exit(EXIT_SUCCESS);
+      break;      
+
+    case 'k':
+      xc_show_keys(xc);
       exit(EXIT_SUCCESS);
       break;      
 
