@@ -84,9 +84,9 @@ void xc_usage(XChainKeys_t *self) {
 void xc_parse_config(XChainKeys_t *self) {
 
   FILE *config;
-  char *path = calloc(1, sizeof(char));
-  char *buffer = calloc(1, sizeof(char));
-  char *argument= calloc(1, sizeof(char));
+  char *path = (char *) calloc(1, sizeof(char));
+  char *buffer = (char *) calloc(1, sizeof(char));
+  char *argument= (char *) calloc(1, sizeof(char));
   char *line, *token, *expect;
   const char *ws = " \t"; 
   int linenum = 0;
@@ -118,7 +118,7 @@ void xc_parse_config(XChainKeys_t *self) {
     exit(EXIT_FAILURE);
   }
 
-  if (self->debug) fprintf(stderr, "Using config file %s\n\n", path);
+  if (self->debug) fprintf(stderr, "Parsing config file %s...\n", path);
 
   /* parse file */
   while(fgets(buffer, 4096, config) != NULL) {
@@ -144,7 +144,6 @@ void xc_parse_config(XChainKeys_t *self) {
       line += strspn(line, ws);
       line[strcspn(line, ws)] = '\0';
       self->timeout = (unsigned int)atoi(line);
-      if (xc->debug) printf("timeout %d\n", self->timeout);
       continue;
     }
 
@@ -153,7 +152,6 @@ void xc_parse_config(XChainKeys_t *self) {
       line += strspn(line, ws);
       line[strcspn(line, ws)] = '\0';
       self->delay = (unsigned int)atoi(line);
-      if (xc->debug) printf("delay %d\n", self->delay);
       continue;
     }
 
@@ -162,7 +160,6 @@ void xc_parse_config(XChainKeys_t *self) {
       line += strspn(line, ws);
       line[strcspn(line, ws)] = '\0';
       font = strdup(line);
-      if (xc->debug) printf("font %s\n", font);
       continue;
     }
 
@@ -171,7 +168,6 @@ void xc_parse_config(XChainKeys_t *self) {
       line += strspn(line, ws);
       line[strcspn(line, ws)] = '\0';
       fg = strdup(line);
-      if (xc->debug) printf("foreground %s\n", fg);
       continue;
     }
 
@@ -180,7 +176,6 @@ void xc_parse_config(XChainKeys_t *self) {
       line += strspn(line, ws);
       line[strcspn(line, ws)] = '\0';
       bg = strdup(line);
-      if (xc->debug) printf("background %s\n", bg);
       continue;
     }
 
@@ -290,9 +285,15 @@ void xc_parse_config(XChainKeys_t *self) {
   self->popup = popup_new(self->display, font, fg, bg);
 
   if (self->debug) {
-    fprintf(stderr, "\n");
+    printf("\n");
+    printf("timeout %d\n", self->timeout);
+    printf("delay %d\n", self->delay);
+    printf("font %s\n", font);
+    printf("foreground %s\n", fg);
+    printf("background %s\n\n", bg);
+    
     binding_list(self->root);
-    fprintf(stderr, "\n");
+    printf("\n");
   }
 }
 

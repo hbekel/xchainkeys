@@ -24,6 +24,7 @@ Key_t* key_new(char *keyspec) {
 int key_parse_keyspec(Key_t *self, char *keyspec) {
 
   char str[256];
+  char *original_keyspec = strdup(keyspec);
   int len, ret;
 
   if (keyspec[0] == ':')
@@ -36,7 +37,9 @@ int key_parse_keyspec(Key_t *self, char *keyspec) {
     strncpy(str, keyspec, len);
     str[len] = '\0';
     
-    key_add_modifier(self, str);
+    if(!key_add_modifier(self, str))
+      fprintf(stderr, "Warning: ignoring unknown modifier '%s' in keyspec '%s'\n", 
+	      str, original_keyspec);
 
     keyspec += len + 1;
   }
@@ -54,7 +57,7 @@ int key_add_modifier(Key_t *self, char *str) {
     return 1;
   }
 
-  if( strcmp(str, "lock") == 0 || strcmp(str, "L") == 0) {
+  if( strcmp(str, "lock") == 0 ) {
     self->modifiers |= LockMask;
     return 1;
   }
@@ -64,11 +67,11 @@ int key_add_modifier(Key_t *self, char *str) {
     return 1;
   }
 
-  if( strcmp(str, "mod1") == 0 || strcmp(str, "A") == 0 ) {
+  if( strcmp(str, "mod1") == 0 || strcmp(str, "A") == 0 || strcmp(str, "M") == 0 ) {
     self->modifiers |= Mod1Mask;
     return 1;
   }
-  if( strcmp(str, "mod2") == 0 || strcmp(str, "N") == 0 ) {
+  if( strcmp(str, "mod2") == 0 ) {
     self->modifiers |= Mod2Mask;
     return 1;
   }
@@ -78,12 +81,12 @@ int key_add_modifier(Key_t *self, char *str) {
     return 1;
   }
 
-  if( strcmp(str, "mod4") == 0 || strcmp(str, "W") == 0) {
+  if( strcmp(str, "mod4") == 0 || strcmp(str, "W") == 0 || strcmp(str, "H") == 0 ) {
     self->modifiers |= Mod4Mask;
     return 1;
   }
 
-  if( strcmp(str, "mod5") == 0 || strcmp(str, "I") == 0) {
+  if( strcmp(str, "mod5") == 0 ) {
     self->modifiers |= Mod4Mask;
     return 1;
   }
@@ -125,19 +128,17 @@ void key_ungrab(Key_t *self) {
 }
 
 char *key_to_str(Key_t *self) {
-  if (self == NULL)
-    return "<none>";
 
-  char *str = (char *) calloc(512, sizeof(char));
+  char *str = (char *) calloc(1, sizeof(char));
 
-  if (self->modifiers & ShiftMask)   strcat(str, "S-");
+  if (self->modifiers & LockMask)    strcat(str, "lock-");
   if (self->modifiers & ControlMask) strcat(str, "C-");
-  if (self->modifiers & LockMask)   strcat(str, "L-");
   if (self->modifiers & Mod1Mask)    strcat(str, "A-");
-  if (self->modifiers & Mod2Mask)    strcat(str, "N-");
+  if (self->modifiers & Mod2Mask)    strcat(str, "mod2-");
   if (self->modifiers & Mod3Mask)    strcat(str, "mod3-");
   if (self->modifiers & Mod4Mask)    strcat(str, "W-");
-  if (self->modifiers & Mod5Mask)    strcat(str, "I-");
+  if (self->modifiers & Mod5Mask)    strcat(str, "mod5-");
+  if (self->modifiers & ShiftMask)   strcat(str, "S-");
 
   strcat(str, XKeysymToString(XKeycodeToKeysym(xc->display, self->keycode, 0)));
 
