@@ -84,9 +84,9 @@ void xc_usage(XChainKeys_t *self) {
 void xc_parse_config(XChainKeys_t *self) {
 
   FILE *config;
-  char *path = calloc(1, 4096);
-  char buffer[4096];
-  char argument[4096];
+  char *path = calloc(1, sizeof(char));
+  char *buffer = calloc(1, sizeof(char));
+  char *argument= calloc(1, sizeof(char));
   char *line, *token, *expect;
   const char *ws = " \t"; 
   int linenum = 0;
