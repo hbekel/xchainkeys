@@ -1,14 +1,13 @@
 #ifndef XCHAINKEYS_H
 #define XCHAINKEYS_H
 
-#define XC_POPUP_DELAY 1000
-#define XC_TIMEOUT 3000
-
 typedef struct XChainKeys {
   Display *display;  
   XModifierKeymap *xmodmap;
   int modmask[8];
   int debug;
+  unsigned int timeout;
+  unsigned int delay;
   struct Popup *popup;
   struct Binding *root;
 } XChainKeys_t;

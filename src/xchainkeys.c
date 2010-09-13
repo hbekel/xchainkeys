@@ -41,9 +41,10 @@ XChainKeys_t* xc_new(Display *display) {
 
   self->display = display;
   self->debug = False;
+  self->timeout = 3000;
+  self->delay = 1000;
   self->root = binding_new();
   self->root->action = ":root";
-  self->popup = popup_new(self->display, "fixed");
   self->xmodmap = XGetModifierMapping(self->display);
   
   i = 0;
@@ -67,16 +68,16 @@ XChainKeys_t* xc_new(Display *display) {
 }
 
 void xc_version(XChainKeys_t *self) {
-  printf("xchainkeys %s Copyright (C) 2010 Henning Bekel <%s>\n",
-	 PACKAGE_VERSION, PACKAGE_BUGREPORT);
+  printf("%s %s Copyright (C) 2010 Henning Bekel <%s>\n",
+	 PACKAGE_NAME, PACKAGE_VERSION, PACKAGE_BUGREPORT);
 }
 
 void xc_usage(XChainKeys_t *self) {
-  printf("Usage: xchainkeys [options]\n\n");
+  printf("Usage: %s [options]\n\n", PACKAGE_NAME);
   printf("  -d, --debug   : Enable debug messages\n");
   printf("  -h, --help    : Print this help text\n");
   printf("  -v, --version : Print version information\n");
-  printf("  -k, --keys    : Show keys\n");
+  printf("  -k, --keys    : Show valid keyspecs\n");
   printf("\n");
 }
 
@@ -90,9 +91,13 @@ void xc_parse_config(XChainKeys_t *self) {
   const char *ws = " \t"; 
   int linenum = 0;
   int len, pos, i;
+
   Key_t *key;
   Binding_t *binding;
   Binding_t *parent;
+  char *font = "fixed";
+  char *fg = "black";
+  char *bg = "white";
 
   /* determine config file path */
   strcpy(path, getenv("HOME"));
@@ -120,18 +125,66 @@ void xc_parse_config(XChainKeys_t *self) {
     linenum++;
     line = buffer;
 
-    // discard whitespace at the beginning
-    line += strspn(line, " \t");
+    /* discard whitespace at the beginning */
+    line += strspn(line, ws);
     
-    // ignore empty lines and comments
+    /* ignore empty lines and comments */
     if( line[0] == '\n' || line[0] == '#' )
       continue;
 
-    // discard newline at end of string
+    /* discard newline at end of string */
     if( line[strlen(line)-1] == '\n' )
       line[strlen(line)-1] = '\0';
     
     /* if (self->debug) fprintf(stderr, "%s\n", line); */
+
+    /* parse options */
+    if( strncmp(line, "timeout", 7) == 0 ) {
+      line += 7;
+      line += strspn(line, ws);
+      line[strcspn(line, ws)] = '\0';
+      self->timeout = (unsigned int)atoi(line);
+      if (xc->debug) printf("timeout %d\n", self->timeout);
+      continue;
+    }
+
+    if( strncmp(line, "delay", 5) == 0 ) {
+      line += 5;
+      line += strspn(line, ws);
+      line[strcspn(line, ws)] = '\0';
+      self->delay = (unsigned int)atoi(line);
+      if (xc->debug) printf("delay %d\n", self->delay);
+      continue;
+    }
+
+    if( strncmp(line, "font", 4) == 0 ) {
+      line += 4;
+      line += strspn(line, ws);
+      line[strcspn(line, ws)] = '\0';
+      font = strdup(line);
+      if (xc->debug) printf("font %s\n", font);
+      continue;
+    }
+
+    if( strncmp(line, "foreground", 10) == 0 ) {
+      line += 10;
+      line += strspn(line, ws);
+      line[strcspn(line, ws)] = '\0';
+      fg = strdup(line);
+      if (xc->debug) printf("foreground %s\n", fg);
+      continue;
+    }
+
+    if( strncmp(line, "background", 10) == 0 ) {
+      line += 10;
+      line += strspn(line, ws);
+      line[strcspn(line, ws)] = '\0';
+      bg = strdup(line);
+      if (xc->debug) printf("background %s\n", bg);
+      continue;
+    }
+
+    /* parse bindings */
 
     pos = 0;
     parent = xc->root;
@@ -175,7 +228,14 @@ void xc_parse_config(XChainKeys_t *self) {
 
 	  // make this binding the parent for the next
 	  parent = binding;
-	}	  
+	}
+	else {
+	  fprintf(stderr, 
+		  "Warning: Invalid keyspec: '%s'. Use %s -k to show valid keyspecs.\n",
+		  token, PACKAGE_NAME);
+	  fprintf(stderr, "-> Skipping line %d: '%s'\n", linenum, buffer);
+	  goto next_line;
+	}
       }
       
       if (strcmp(expect, "action") == 0) {
@@ -196,13 +256,13 @@ void xc_parse_config(XChainKeys_t *self) {
     }
     // done with this line
     
-    // append the argument to the current binding
-    if (strlen(argument))
-      binding->argument = strdup(argument);
-
-    // apply default action :enter
-    if(!strlen(binding->action))
-      binding->action = ":enter";
+    if (binding != NULL) {
+      // append the argument to the current binding
+      if (strlen(argument) && !strlen(binding->argument))
+	binding->argument = strdup(argument);
+    }
+  next_line:
+    ;
   }
   fclose(config);
 
@@ -225,7 +285,12 @@ void xc_parse_config(XChainKeys_t *self) {
       }
     }
   }
+
+  /* initialize popup window */
+  self->popup = popup_new(self->display, font, fg, bg);
+
   if (self->debug) {
+    fprintf(stderr, "\n");
     binding_list(self->root);
     fprintf(stderr, "\n");
   }
@@ -288,7 +353,9 @@ void xc_show_keys(XChainKeys_t *self) {
   KeyCode keycode;
   char *keystr;
 
-  printf("Showing key combinations, press 'q' to quit\n");
+  xc_version(xc);
+  printf("\nPress a key combination to show the corresponding keyspec.\n");
+  printf("Press Control-c to quit.\n");
   
   XGrabKeyboard(self->display, DefaultRootWindow(self->display),
 		True, GrabModeAsync, GrabModeAsync, CurrentTime);
@@ -304,7 +371,7 @@ void xc_show_keys(XChainKeys_t *self) {
       if (xc_keycode_to_modmask(xc, keycode) != 0) 
 	continue;
       
-      if ( strcmp(keystr, "q") == 0 && xc_get_modifiers(self) == 0 ) {
+      if ( strcmp(keystr, "c") == 0 && xc_get_modifiers(self) == ControlMask ) {
 	XUngrabKeyboard(self->display, CurrentTime);
 	return;
       }

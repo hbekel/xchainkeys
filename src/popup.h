@@ -12,7 +12,7 @@ typedef struct Popup {
   int mapped;
 } Popup_t;
 
-void* popup_new(Display *display, char *font);
+void* popup_new(Display *display, char *font, char *fg, char *bg);
 void popup_update(Popup_t *self);
 void popup_show(Popup_t *self);
 void popup_hide(Popup_t *self);

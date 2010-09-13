@@ -83,8 +83,8 @@ void binding_enter(Binding_t *self) {
 
   // prepare timeout and popup delay
   now = xc_get_msec();
-  delay = now + XC_POPUP_DELAY;
-  timeout = xc_get_msec() + XC_TIMEOUT;
+  delay = now + xc->delay;
+  timeout = xc_get_msec() + xc->timeout;
 
   // prepare popup
   snprintf(xc->popup->text, strlen(path)+1, "%s", path);
@@ -102,11 +102,11 @@ void binding_enter(Binding_t *self) {
     now = xc_get_msec();
 
     // show popup after delay
-    if(now >= delay)
+    if(now >= delay && !xc->popup->mapped)
       popup_show(xc->popup);
 
     // abort on timeout
-    if(now >= timeout) {
+    if(now >= timeout && xc->timeout > 0) {
       if (xc->debug) fprintf(stderr, "Timed out\n");
       done = 1;
       continue;
@@ -142,7 +142,7 @@ void binding_enter(Binding_t *self) {
 	  else {
 	    sprintf(xc->popup->text, "%s %s : no binding", path, key_to_str(key));
 	    popup_show(xc->popup);
-	    popup_set_timeout(xc->popup, XC_POPUP_DELAY);
+	    popup_set_timeout(xc->popup, xc->delay);
 
 	    if (xc->debug) 
 	      fprintf(stderr, " -> %s %s: no binding\n", path, key_to_str(key));

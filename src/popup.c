@@ -9,12 +9,10 @@
 
 #include "popup.h"
 
-void* popup_new(Display *display, char *font) {
+void* popup_new(Display *display, char *font, char *fg, char *bg) {
 
   Popup_t *self = (Popup_t *) calloc(1, sizeof(Popup_t)); 
   self->display = display;
-
-  int screen = DefaultScreen(self->display);
 
   XSetWindowAttributes winattrs;
   winattrs.override_redirect = True;
@@ -28,14 +26,24 @@ void* popup_new(Display *display, char *font) {
 			    CWOverrideRedirect, 
 			    &winattrs); 
   
-  XSetWindowBackground(self->display, self->window, WhitePixel(self->display, screen));
-  XSetWindowBorder(self->display, self->window, BlackPixel(self->display, screen));
+  Colormap colormap = DefaultColormap(self->display, 0);
+  XColor fgcolor;
+  XColor bgcolor;
+
+  XParseColor(self->display, colormap, fg, &fgcolor);
+  XAllocColor(self->display, colormap, &fgcolor);
+
+  XParseColor(self->display, colormap, bg, &bgcolor);
+  XAllocColor(self->display, colormap, &bgcolor);
+
+  XSetWindowBorder(self->display, self->window, fgcolor.pixel);
+  XSetWindowBackground(self->display, self->window, bgcolor.pixel);
 
   XGCValues values;
   values.cap_style = CapButt;
   values.join_style = JoinBevel;
-  values.foreground = BlackPixel(self->display, screen);
-  values.background = WhitePixel(self->display, screen);
+  values.foreground = fgcolor.pixel;
+  values.background = bgcolor.pixel;
 
   unsigned long valuemask = GCCapStyle | GCJoinStyle;
   
@@ -44,6 +52,7 @@ void* popup_new(Display *display, char *font) {
     fprintf(stderr, "XCreateGC: \n");
     exit(EXIT_FAILURE);
   }
+  XSetForeground(self->display, self->gc, fgcolor.pixel);
 
   self->font = XLoadQueryFont(self->display, font);
   if (!self->font) {

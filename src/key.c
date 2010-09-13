@@ -95,9 +95,9 @@ int key_set_keycode(Key_t *self, char *str) {
   KeySym keysym;
 
   keysym = XStringToKeysym(str);
-  if( keysym == NoSymbol )
+  if( keysym == NoSymbol ) {
     return 0;
-
+  }
   self->keycode = XKeysymToKeycode(xc->display, keysym);
   return 1;
 }
@@ -112,8 +112,6 @@ int key_equals(Key_t *self, Key_t *key) {
 void key_grab(Key_t *self) {
   int i;
 
-  if(xc->debug) fprintf(stderr, "Grabbing key %s\n", key_to_str(self));
-  
   for( i=0; i<8; i++ ) {
     XGrabKey(xc->display, self->keycode, self->modifiers | xc->modmask[i], 
 	     DefaultRootWindow(xc->display), False,
