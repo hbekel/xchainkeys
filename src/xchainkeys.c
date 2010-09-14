@@ -17,6 +17,14 @@
  * 02110-1301, USA.  
  */
 
+#ifndef _XOPEN_SOURCE
+#define _XOPEN_SOURCE 500
+#endif /* _XOPEN_SOURCE */
+
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif /* _GNU_SOURCE */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -84,9 +92,9 @@ void xc_usage(XChainKeys_t *self) {
 void xc_parse_config(XChainKeys_t *self) {
 
   FILE *config;
-  char *path = (char *) calloc(1, sizeof(char));
-  char *buffer = (char *) calloc(1, sizeof(char));
-  char *argument= (char *) calloc(1, sizeof(char));
+  char *path = (char *) calloc(4096, sizeof(char));
+  char *buffer = (char *) calloc(4096, sizeof(char));
+  char *argument= (char *) calloc(4096, sizeof(char));
   char *line, *token, *expect;
   const char *ws = " \t"; 
   int linenum = 0;
@@ -103,7 +111,7 @@ void xc_parse_config(XChainKeys_t *self) {
   strcpy(path, getenv("HOME"));
   
   if(getenv("XDG_CONFIG_HOME") != NULL ) {
-    strcpy(path, strdup(getenv("XDG_CONFIG_HOME")));
+    strcpy(path, getenv("XDG_CONFIG_HOME"));
     strcat(path, "/xchainkeys/xchainkeys.conf");
   } 
   else {
@@ -295,6 +303,12 @@ void xc_parse_config(XChainKeys_t *self) {
     binding_list(self->root);
     printf("\n");
   }
+  free(font);
+  free(fg);
+  free(bg);
+  free(path);
+  free(buffer);
+  free(argument);
 }
 
 void xc_mainloop(XChainKeys_t *self) {
@@ -353,6 +367,7 @@ void xc_show_keys(XChainKeys_t *self) {
   Key_t *key;
   KeyCode keycode;
   char *keystr;
+  char *keyspec;
 
   xc_version(xc);
   printf("\nPress a key combination to show the corresponding keyspec.\n");
@@ -377,10 +392,12 @@ void xc_show_keys(XChainKeys_t *self) {
 	return;
       }
       
-      key = key_new(keystr);
+      key = key_new(keystr);      
       key->modifiers = xc_get_modifiers(self);
       
-      printf("%s\n", key_to_str(key));
+      keyspec = key_to_str(key);
+      printf("%s\n", keyspec);
+      free(keyspec);
       free(key);
     }
   }
@@ -506,3 +523,4 @@ int main(int argc, char **argv) {
 
   exit(EXIT_SUCCESS);
 }
+

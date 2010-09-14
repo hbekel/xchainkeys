@@ -1,3 +1,7 @@
+#ifndef _XOPEN_SOURCE
+#define _XOPEN_SOURCE 500
+#endif /* _XOPEN_SOURCE */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -77,6 +81,7 @@ void binding_enter(Binding_t *self) {
   Binding_t *binding;
   Key_t *key;
   char *keystr;
+  char *keyspec;
   int done = False;
   long now, timeout, delay;
   char *path = binding_to_path(self);
@@ -140,18 +145,20 @@ void binding_enter(Binding_t *self) {
 	    binding_activate(binding);
 	  }
 	  else {
-	    sprintf(xc->popup->text, "%s %s : no binding", path, key_to_str(key));
+	    keyspec = key_to_str(key);
+	    sprintf(xc->popup->text, "%s %s : no binding", path, keyspec);
 	    popup_show(xc->popup);
 	    popup_set_timeout(xc->popup, xc->delay);
 
 	    if (xc->debug) 
-	      fprintf(stderr, " -> %s %s: no binding\n", path, key_to_str(key));
+	      fprintf(stderr, " -> %s %s: no binding\n", path, keyspec);
+	    free(keyspec);
 	  }	
 	  // done, exit this keymap
 	  done = True;
+	  free(key);
 	  break;
 	}
-	free(key);
       }
     }
   }
@@ -177,6 +184,7 @@ void binding_escape(Binding_t *self) {
   XKeyEvent e;
   Window focused;
   int focus_ret;
+  char *keyspec;
 
   if(self->parent == NULL)
     return;
@@ -184,10 +192,13 @@ void binding_escape(Binding_t *self) {
   XUngrabKeyboard(xc->display, CurrentTime);
   XGetInputFocus(xc->display, &focused, &focus_ret);
 
-  if (xc->debug) 
-    fprintf(stderr, "Sending synthetic KeyPressEvent (%s) to window id %d\n", 
-	    key_to_str(self->parent->key), (int)focused);
-	    
+  if (xc->debug) {
+    keyspec = key_to_str(self->parent->key);
+      fprintf(stderr, "Sending synthetic KeyPressEvent (%s) to window id %d\n", 
+	      keyspec, (int)focused);
+    free(keyspec);
+  }
+
   e.display = xc->display;
   e.subwindow = None;
   e.time = CurrentTime;
@@ -221,15 +232,17 @@ void binding_exec(Binding_t *self) {
 
 char *binding_to_path(Binding_t *self) {
   Binding_t *binding = self;
-  char *path = (char *) calloc(1, 4096*sizeof(char));
+  char *path = (char *) calloc(4096, sizeof(char));
   char *keystr;
   do {
     keystr = key_to_str(binding->key);
     if(strlen(path) > 0)
       strncat(keystr, " ", 1);
 
-    memmove(path+strlen(keystr), path, strlen(keystr));
+    memmove(path+strlen(keystr), path, strlen(path));
     memmove(path, keystr, strlen(keystr));
+    
+    free(keystr);
 
     binding = binding->parent;
   } while(binding->parent != NULL);
@@ -238,6 +251,7 @@ char *binding_to_path(Binding_t *self) {
 
 void binding_list(Binding_t *self) {
   Binding_t *current;
+  char *keyspec;
   int depth = 0;
   int i;
   
@@ -247,17 +261,18 @@ void binding_list(Binding_t *self) {
     current = current->parent;      
   }
   for( i=1; i<depth; i++ )
-    fprintf(stderr, "    ");
+    fprintf(stderr, "    ");  
 
-  if(depth > 0) 
+  if(depth > 0) {
+    keyspec = key_to_str(self->key);
     fprintf(stderr, "%s %s %s\n",
-	    key_to_str(self->key),
+	    keyspec,
 	    self->action,
 	    self->argument);
+    free(keyspec);
+  }
 
   for( i=0; i<self->num_children; i++ ) {
     binding_list(self->children[i]);
   }
 }
-
-  

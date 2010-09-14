@@ -1,3 +1,7 @@
+#ifndef _XOPEN_SOURCE
+#define _XOPEN_SOURCE 500
+#endif /* _XOPEN_SOURCE */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -117,32 +121,3 @@ void popup_destroy(Popup_t *self) {
   XFreeGC(self->display, self->gc);
   free(self);
 }
-/*
-int main(int argc, char **argv) {
-
-  Display *dpy;
-  if (NULL==(dpy=XOpenDisplay(NULL))) {
-    exit(1);
-  }
-
-  Popup_t *popup = popup_new(dpy, argv[1]);
-
-  strcat(popup->text, argv[2]);
-
-  popup_show(popup);
-
-  sleep(1);
-
-  strcat(popup->text, " Hello");
-
-  popup_show(popup);
-
-  sleep(1);
-
-  popup_hide(popup);
-
-  popup_destroy(popup);
-  
-  exit(EXIT_SUCCESS);
-}
-*/

@@ -1,3 +1,7 @@
+#ifndef _XOPEN_SOURCE
+#define _XOPEN_SOURCE 500
+#endif /* _XOPEN_SOURCE */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -47,6 +51,8 @@ int key_parse_keyspec(Key_t *self, char *keyspec) {
   /* keyspec now contains the keysym string */
   ret = key_set_keycode(self, keyspec);
   
+  free(original_keyspec);
+
   return ret;
 }
 
