@@ -1,4 +1,4 @@
-/* xchainkeys 0.1 -- exclusive keychains for X11
+/* xchainkeys -- chained keybindings for X11
  * Copyright (C) 2010 Henning Bekel <h.bekel@googlemail.com>
  *
  * This program is free software; you can redistribute it and/or

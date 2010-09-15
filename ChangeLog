@@ -1,4 +1,8 @@
+2010-09-15  Henning Bekel <h.bekel@googlemail.com>
+
+	* Released version 0.2
+	* Fixed possibility of invalid free() in xc_show_keys()
+
 2010-09-14  Henning Bekel <h.bekel@googlemail.com>
 
 	* Released version 0.1
-
