@@ -53,6 +53,7 @@ XChainKeys_t* xc_new(Display *display) {
   self->delay = 1000;
   self->root = binding_new();
   self->root->action = ":root";
+  self->reentry = NULL;
   self->xmodmap = XGetModifierMapping(self->display);
   
   i = 0;
@@ -121,9 +122,15 @@ void xc_parse_config(XChainKeys_t *self) {
   Key_t *key;
   Binding_t *binding;
   Binding_t *parent;
-  char *font = "fixed";
-  char *fg = "black";
-  char *bg = "white";
+
+  char *font = calloc(512, sizeof(char));
+  strcpy(font, "fixed");
+
+  char *fg = calloc(64, sizeof(char));
+  strcpy(fg, "black");
+
+  char *bg = calloc(64, sizeof(char));
+  strcpy(bg, "white");
 
   /* try to open config file */
   f = fopen(self->config, "r");
@@ -312,15 +319,17 @@ void xc_parse_config(XChainKeys_t *self) {
     binding_list(self->root);
     printf("\n");
   }
+  free(buffer);
+  free(argument);
+
   free(font);
   free(fg);
   free(bg);
-  free(buffer);
-  free(argument);
 }
 
 void xc_mainloop(XChainKeys_t *self) {
   Binding_t *binding;
+  Binding_t *reentry;
   XEvent event;
   KeyCode keycode;
   long now;
@@ -365,6 +374,13 @@ void xc_mainloop(XChainKeys_t *self) {
 	  }
 	}
       }
+    }
+  reentry:
+    if(xc->reentry != NULL) {
+      reentry = xc->reentry;
+      xc->reentry = NULL;
+      binding_activate(reentry);
+      goto reentry;
     }
   }
 }

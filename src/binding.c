@@ -69,6 +69,9 @@ void binding_activate(Binding_t *self) {
   if(strcmp(self->action, ":exec") == 0)
     binding_exec(self);
 
+  if(strcmp(self->action, ":repeat") == 0)
+    binding_repeat(self);
+
   free(path);
 }
 
@@ -220,6 +223,69 @@ void binding_escape(Binding_t *self) {
 
   XGrabKeyboard(xc->display, DefaultRootWindow(xc->display),
 		True, GrabModeAsync, GrabModeAsync, CurrentTime);
+}
+
+void binding_repeat(Binding_t *self) {
+  Key_t *key;
+  Binding_t *binding;
+  XEvent event;
+  KeyCode keycode;
+  char *keystr;
+  int i;
+  int abort = False;
+  
+  popup_show(xc->popup);
+  binding_exec(self);
+
+  while(True) {
+    XNextEvent(xc->display, &event);
+    
+    switch(event.type) {
+    case KeyPress:
+      
+      // get keycode and keystr
+      keycode = ((XKeyPressedEvent*)&event)->keycode;
+      keystr = XKeysymToString(XKeycodeToKeysym(xc->display, keycode, 0));
+      
+      // check if this key is a modifier 
+      if (xc_keycode_to_modmask(xc, keycode) != 0) {
+	break;
+      }      
+      else {	
+	// non-modifier key hit...
+	key = key_new(keystr);
+	key->modifiers = xc_get_modifiers(xc);
+	
+	for(i=0; i<self->parent->num_children; i++) {
+	  binding = self->parent->children[i];
+
+	  if ( strcmp(binding->action, ":repeat") == 0) { 
+	    if ( key_equals(binding->key, key) ) {
+	      binding_exec(binding);
+	      abort = False;
+	      break;
+	    }
+	  }
+	  abort = True;
+	}
+	
+	if(abort) {
+	  /* if the aborting key matches any root chains or chroots,
+	   * prepare xc->reentry */
+	  for(i=0; i<xc->root->num_children; i++) {
+	    binding = xc->root->children[i];
+	    if ( strcmp(binding->action, ":enter") == 0 &&
+		 key_equals(binding->key, key) ) {
+	      xc->reentry = binding;
+	    }
+	  } 
+	  free(key);
+	  return;
+	}
+	free(key);
+      }
+    }
+  }
 }
 
 void binding_exec(Binding_t *self) {

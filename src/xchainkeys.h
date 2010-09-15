@@ -11,6 +11,7 @@ typedef struct XChainKeys {
   char *config;
   struct Popup *popup;
   struct Binding *root;
+  struct Binding *reentry;
 } XChainKeys_t;
 
 XChainKeys_t* xc_new(Display *display);
