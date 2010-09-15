@@ -123,6 +123,8 @@ void xc_parse_config(XChainKeys_t *self) {
   Binding_t *binding;
   Binding_t *parent;
 
+  int feedback = True;
+
   char *font = calloc(512, sizeof(char));
   strcpy(font, "fixed");
 
@@ -177,6 +179,19 @@ void xc_parse_config(XChainKeys_t *self) {
       continue;
     }
 
+    if( strncmp(line, "feedback", 8) == 0 ) {
+      line += 8;
+      line += strspn(line, ws);
+      line[strcspn(line, ws)] = '\0';
+
+      if(strcmp(line, "off") == 0)
+	feedback = False;
+      if(strcmp(line, "on") == 0) 
+        feedback = True;
+
+      continue;
+    }
+
     if( strncmp(line, "font", 4) == 0 ) {
       line += 4;
       line += strspn(line, ws);
@@ -226,21 +241,22 @@ void xc_parse_config(XChainKeys_t *self) {
       if (strcmp(expect, "key") == 0) {
 	if ((key = key_new(token)) != NULL) {
 
-	  // if this key is already bound in the parent binding,
-	  // then make that binding the parent binding for the next key
+	  /* if this key is already bound in the parent binding,
+	   * then make that binding the parent binding for the next key
+	   */
 	  if(binding_get_child_by_key(parent, key) != NULL) {
 	    parent = binding_get_child_by_key(parent, key);
 	    goto next_token;
 	  }  
 
-	  // create a binding for this key
+	  /* create a binding for this key */
 	  binding = binding_new();
 	  binding->key = key;
 
-	  // append the new binding to the current parent
+	  /* append the new binding to the current parent */
 	  binding_append_child(parent, binding);
 
-	  // make this binding the parent for the next
+	  /* make this binding the parent for the next */
 	  parent = binding;
 	}
 	else {
@@ -269,10 +285,10 @@ void xc_parse_config(XChainKeys_t *self) {
       pos++;
       free(token);
     }
-    // done with this line
+    /* all tokens parsed */
     
     if (binding != NULL) {
-      // append the argument to the current binding
+      /* append the argument to the current binding */
       if (strlen(argument)) {
 	binding->argument = strdup(argument);
       }
@@ -307,14 +323,22 @@ void xc_parse_config(XChainKeys_t *self) {
 
   /* initialize popup window */
   self->popup = popup_new(self->display, font, fg, bg);
+  self->popup->enabled = feedback;
 
   if (self->debug) {
     printf("\n");
     printf("timeout %d\n", self->timeout);
-    printf("delay %d\n", self->delay);
-    printf("font %s\n", font);
-    printf("foreground %s\n", fg);
-    printf("background %s\n\n", bg);
+
+    if (feedback) { 
+      printf("feedback on\n");
+      printf("delay %d\n", self->delay);
+      printf("font %s\n", font);
+      printf("foreground %s\n", fg);
+      printf("background %s\n\n", bg);
+    }
+    else {
+      printf("feedback off\n\n");
+    }
     
     binding_list(self->root);
     printf("\n");

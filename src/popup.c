@@ -17,6 +17,7 @@ void* popup_new(Display *display, char *font, char *fg, char *bg) {
 
   Popup_t *self = (Popup_t *) calloc(1, sizeof(Popup_t)); 
   self->display = display;
+  self->enabled = True;
 
   XSetWindowAttributes winattrs;
   winattrs.override_redirect = True;
@@ -97,10 +98,12 @@ void popup_update(Popup_t *self) {
 }
 
 void popup_show(Popup_t *self) {
-  XMapWindow(self->display, self->window);
-  XRaiseWindow(self->display, self->window);
-  self->mapped = True;
-  popup_update(self);
+  if(self->enabled) {
+    XMapWindow(self->display, self->window);
+    XRaiseWindow(self->display, self->window);
+    self->mapped = True;
+    popup_update(self);
+  }
 }
 
 void popup_hide(Popup_t *self) {

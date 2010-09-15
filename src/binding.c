@@ -86,18 +86,18 @@ void binding_enter(Binding_t *self) {
   long now, timeout, delay;
   char *path = binding_to_path(self);
 
-  // prepare timeout and popup delay
+  /* prepare timeout and popup delay */
   now = xc_get_msec();
   delay = now + xc->delay;
   timeout = xc_get_msec() + xc->timeout;
 
-  // prepare popup
+  /* prepare popup */
   snprintf(xc->popup->text, strlen(path)+1, "%s", path);
 
   if(xc->popup->mapped)
     popup_show(xc->popup);
 
-  // get exclusive grab on keyboard...
+  /* get exclusive grab on keyboard... */
   if (self->parent == xc->root) {
     XGrabKeyboard(xc->display, DefaultRootWindow(xc->display),
 		  True, GrabModeAsync, GrabModeAsync, CurrentTime);
@@ -106,11 +106,11 @@ void binding_enter(Binding_t *self) {
   while(!done) {    
     now = xc_get_msec();
 
-    // show popup after delay
+    /* show popup after delay */
     if(now >= delay && !xc->popup->mapped)
       popup_show(xc->popup);
 
-    // abort on timeout (unless in chroot)
+    /* abort on timeout (unless in chroot) */
     if(strncmp(self->argument, "chroot", 6) != 0) {
       
       if(now >= timeout && xc->timeout > 0) {
@@ -120,38 +120,38 @@ void binding_enter(Binding_t *self) {
       }
     }
 
-    // look for key press events...
+    /* look for key press events... */
     if(XPending(xc->display)) {
       XNextEvent(xc->display, &event);
       
-      // dispatch exec, abort or escape  
+      /* dispatch exec, abort or escape */
       switch(event.type) {
       case KeyPress:
 	
-	// get keycode and keystr
+	/* get keycode and keystr */
 	keycode = ((XKeyPressedEvent*)&event)->keycode;
 	keystr = XKeysymToString(XKeycodeToKeysym(xc->display, keycode, 0));
 	
-	// check if this key is a modifier 
+	/* check if this key is a modifier */
 	if (xc_keycode_to_modmask(xc, keycode) != 0) {
 	  break;
 	}      
 	else {	
-	  // non-modifier key hit...
+	  /* non-modifier key hit... */
 	  key = key_new(keystr);
 	  key->modifiers = xc_get_modifiers(xc);
 	  
-	  // check if this key is bound in this keymap
+	  /* check if this key is bound in this keymap */
 	  if( (binding = binding_get_child_by_key(self, key)) != NULL) {
 	    
-	    // :abort from here...
+	    /* :abort from here... */
 	    if (strcmp(binding->action, ":abort") == 0) {
 	      if (xc->debug) fprintf(stderr, "Aborted\n");
 	      done = True;
 	      break;
 	    }
 	    
-	    // ... or activate the binding
+	    /* ... or activate the binding */
 	    binding_activate(binding);
 	  }
 	  else {
@@ -165,7 +165,7 @@ void binding_enter(Binding_t *self) {
 	    free(keyspec);
 	  }	
 
-	  // done, exit this keymap unless we're in a chroot
+	  /* done, exit this keymap unless we're in a chroot */
 	  if(strncmp(self->argument, "chroot", 6) != 0)
 	    done = True;
 
@@ -176,12 +176,12 @@ void binding_enter(Binding_t *self) {
     }
   }
 
-  // ungrab keyboard...
+  /* ungrab keyboard... */
   if (self->parent == xc->root) {
     XUngrabKeyboard(xc->display, CurrentTime);
   }
 
-  // hide popup if no timeout is set for it
+  /* hide popup if no timeout is set for it */
   if(xc->popup->timeout == 0)
     popup_hide(xc->popup);
 
@@ -243,19 +243,22 @@ void binding_repeat(Binding_t *self) {
     switch(event.type) {
     case KeyPress:
       
-      // get keycode and keystr
+      /* get keycode and keystr */
       keycode = ((XKeyPressedEvent*)&event)->keycode;
       keystr = XKeysymToString(XKeycodeToKeysym(xc->display, keycode, 0));
       
-      // check if this key is a modifier 
+      /* check if this key is a modifier */
       if (xc_keycode_to_modmask(xc, keycode) != 0) {
 	break;
       }      
       else {	
-	// non-modifier key hit...
+	/* non-modifier key hit... */
 	key = key_new(keystr);
 	key->modifiers = xc_get_modifiers(xc);
 	
+	/* :exec all :repeat actions in the parent binding 
+	 * abort on any non-repeating key
+	 */
 	for(i=0; i<self->parent->num_children; i++) {
 	  binding = self->parent->children[i];
 
@@ -268,10 +271,12 @@ void binding_repeat(Binding_t *self) {
 	  }
 	  abort = True;
 	}
-	
 	if(abort) {
-	  /* if the aborting key matches any root chains or chroots,
-	   * prepare xc->reentry */
+	  /* if the aborting key matches any root chains or chroots
+	   * bindings, prepare immediate re-entry into that chain from
+	   * xc_mainloop() 
+	   */
+
 	  for(i=0; i<xc->root->num_children; i++) {
 	    binding = xc->root->children[i];
 	    if ( strcmp(binding->action, ":enter") == 0 &&

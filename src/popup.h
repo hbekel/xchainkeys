@@ -10,6 +10,7 @@ typedef struct Popup {
   char text[4096];
   unsigned int timeout;
   int mapped;
+  int enabled;
 } Popup_t;
 
 void* popup_new(Display *display, char *font, char *fg, char *bg);
