@@ -66,9 +66,6 @@ void binding_activate(Binding_t *self) {
   if(strcmp(self->action, ":escape") == 0)
     binding_escape(self);
 
-  if(strcmp(self->action, ":abort") == 0)
-    binding_abort(self);
-
   if(strcmp(self->action, ":exec") == 0)
     binding_exec(self);
 
@@ -110,13 +107,16 @@ void binding_enter(Binding_t *self) {
     if(now >= delay && !xc->popup->mapped)
       popup_show(xc->popup);
 
-    // abort on timeout
-    if(now >= timeout && xc->timeout > 0) {
-      if (xc->debug) fprintf(stderr, "Timed out\n");
-      done = 1;
-      continue;
+    // abort on timeout (unless in chroot)
+    if(strncmp(self->argument, "chroot", 6) != 0) {
+      
+      if(now >= timeout && xc->timeout > 0) {
+	if (xc->debug) fprintf(stderr, "Timed out\n");
+	done = True;
+	continue;
+      }
     }
-    
+
     // look for key press events...
     if(XPending(xc->display)) {
       XNextEvent(xc->display, &event);
@@ -141,7 +141,14 @@ void binding_enter(Binding_t *self) {
 	  // check if this key is bound in this keymap
 	  if( (binding = binding_get_child_by_key(self, key)) != NULL) {
 	    
-	    // activate the binding
+	    // :abort from here...
+	    if (strcmp(binding->action, ":abort") == 0) {
+	      if (xc->debug) fprintf(stderr, "Aborted\n");
+	      done = True;
+	      break;
+	    }
+	    
+	    // ... or activate the binding
 	    binding_activate(binding);
 	  }
 	  else {
@@ -154,8 +161,11 @@ void binding_enter(Binding_t *self) {
 	      fprintf(stderr, " -> %s %s: no binding\n", path, keyspec);
 	    free(keyspec);
 	  }	
-	  // done, exit this keymap
-	  done = True;
+
+	  // done, exit this keymap unless we're in a chroot
+	  if(strncmp(self->argument, "chroot", 6) != 0)
+	    done = True;
+
 	  free(key);
 	  break;
 	}
@@ -173,10 +183,6 @@ void binding_enter(Binding_t *self) {
     popup_hide(xc->popup);
 
   free(path);
-}
-
-void binding_abort(Binding_t *self) {
-   if (xc->debug) fprintf(stderr, "Aborted\n");
 }
 
 void binding_escape(Binding_t *self) {
@@ -211,6 +217,9 @@ void binding_escape(Binding_t *self) {
   
   XSendEvent(xc->display, e.window, True, KeyPressMask, (XEvent *)&e);
   XSync(xc->display, False);
+
+  XGrabKeyboard(xc->display, DefaultRootWindow(xc->display),
+		True, GrabModeAsync, GrabModeAsync, CurrentTime);
 }
 
 void binding_exec(Binding_t *self) {
@@ -265,10 +274,7 @@ void binding_list(Binding_t *self) {
 
   if(depth > 0) {
     keyspec = key_to_str(self->key);
-    fprintf(stderr, "%s %s %s\n",
-	    keyspec,
-	    self->action,
-	    self->argument);
+    fprintf(stderr, "%s %s %s\n", keyspec, self->action, self->argument);
     free(keyspec);
   }
 

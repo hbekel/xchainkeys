@@ -8,6 +8,7 @@ typedef struct XChainKeys {
   int debug;
   unsigned int timeout;
   unsigned int delay;
+  char *config;
   struct Popup *popup;
   struct Binding *root;
 } XChainKeys_t;
@@ -15,6 +16,7 @@ typedef struct XChainKeys {
 XChainKeys_t* xc_new(Display *display);
 void xc_version(XChainKeys_t *self);
 void xc_usage(XChainKeys_t *self);
+void xc_find_config(XChainKeys_t *self);
 void xc_parse_config(XChainKeys_t *self);
 void xc_mainloop(XChainKeys_t *self);
 int xc_keycode_to_modmask(XChainKeys_t *self, KeyCode keycode);

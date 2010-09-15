@@ -72,6 +72,8 @@ XChainKeys_t* xc_new(Display *display) {
   self->modmask[i++] = caps | scroll;
   self->modmask[i++] = num | caps | scroll;
 
+  xc_find_config(self);
+
   return self;
 }
 
@@ -86,13 +88,29 @@ void xc_usage(XChainKeys_t *self) {
   printf("  -h, --help    : Print this help text\n");
   printf("  -v, --version : Print version information\n");
   printf("  -k, --keys    : Show valid keyspecs\n");
+  printf("  -f, --file    : alternative config file\n");
   printf("\n");
+}
+
+void xc_find_config(XChainKeys_t *self) {
+  
+  self->config = (char *) calloc(4096, sizeof(char));
+
+  /* determine config file self->config */
+  strcpy(self->config, getenv("HOME"));
+  
+  if(getenv("XDG_CONFIG_HOME") != NULL ) {
+    strcpy(self->config, getenv("XDG_CONFIG_HOME"));
+    strcat(self->config, "/xchainkeys/xchainkeys.conf");
+  } 
+  else {
+    strcat(self->config, "/.config/xchainkeys/xchainkeys.conf");
+  }
 }
 
 void xc_parse_config(XChainKeys_t *self) {
 
-  FILE *config;
-  char *path = (char *) calloc(4096, sizeof(char));
+  FILE *f;
   char *buffer = (char *) calloc(4096, sizeof(char));
   char *argument= (char *) calloc(4096, sizeof(char));
   char *line, *token, *expect;
@@ -107,29 +125,18 @@ void xc_parse_config(XChainKeys_t *self) {
   char *fg = "black";
   char *bg = "white";
 
-  /* determine config file path */
-  strcpy(path, getenv("HOME"));
-  
-  if(getenv("XDG_CONFIG_HOME") != NULL ) {
-    strcpy(path, getenv("XDG_CONFIG_HOME"));
-    strcat(path, "/xchainkeys/xchainkeys.conf");
-  } 
-  else {
-    strcat(path, "/.config/xchainkeys/xchainkeys.conf");
-  }
-
   /* try to open config file */
-  config = fopen(path, "r");
+  f = fopen(self->config, "r");
   
-  if(config == NULL) {
-    fprintf(stderr, "error: '%s': %s\n", path, strerror(errno));
+  if(f == NULL) {
+    fprintf(stderr, "error: '%s': %s\n", self->config, strerror(errno));
     exit(EXIT_FAILURE);
   }
 
-  if (self->debug) fprintf(stderr, "Parsing config file %s...\n", path);
+  if (self->debug) fprintf(stderr, "Parsing config file %s...\n", self->config);
 
   /* parse file */
-  while(fgets(buffer, 4096, config) != NULL) {
+  while(fgets(buffer, 4096, f) != NULL) {
     linenum++;
     line = buffer;
 
@@ -195,7 +202,7 @@ void xc_parse_config(XChainKeys_t *self) {
     expect = "key";
     argument[0] = '\0';
 
-    while(line[0] != '\0') {
+    while(strlen(line)) {
       len = strcspn(line, ws);
       
       token = calloc((len+1), sizeof(char));
@@ -226,9 +233,6 @@ void xc_parse_config(XChainKeys_t *self) {
 	  // append the new binding to the current parent
 	  binding_append_child(parent, binding);
 
-	  if(parent == xc->root && !strlen(binding->action))
-	    binding->action = ":enter";
-
 	  // make this binding the parent for the next
 	  parent = binding;
 	}
@@ -251,6 +255,7 @@ void xc_parse_config(XChainKeys_t *self) {
 	if(strlen(argument))
 	  strncat(argument, " ", 1);
 	strncat(argument, token, strlen(token));
+	goto next_token;
       }
 
     next_token:
@@ -261,25 +266,29 @@ void xc_parse_config(XChainKeys_t *self) {
     
     if (binding != NULL) {
       // append the argument to the current binding
-      if (strlen(argument) && !strlen(binding->argument))
+      if (strlen(argument)) {
 	binding->argument = strdup(argument);
+      }
     }
   next_line:
     ;
   }
-  fclose(config);
+  fclose(f);
 
-  // add default :escape and :abort bindings to :enter'ing root bindings
-
+  /* add defaults */
   for (i=0; i<self->root->num_children; i++) {
     parent = self->root->children[i];
     if (strcmp(parent->action, ":enter") == 0) {
+
+      /* create default :escape binding unless present */
       if (!binding_get_child_by_action(parent, ":escape")) {
 	binding = binding_new();
 	binding->action = ":escape";
 	binding->key = parent->key;
 	binding_append_child(parent, binding);
       }
+
+      /* create default :abort binding unless present */
       if (!binding_get_child_by_action(parent, ":abort")) {
 	binding = binding_new();
 	binding->action = ":abort";
@@ -306,7 +315,6 @@ void xc_parse_config(XChainKeys_t *self) {
   free(font);
   free(fg);
   free(bg);
-  free(path);
   free(buffer);
   free(argument);
 }
@@ -463,6 +471,7 @@ int main(int argc, char **argv) {
     { "help", no_argument, NULL, 'h' },
     { "version", no_argument, NULL, 'v' },
     { "keys", no_argument, NULL, 'k' },
+    { "file", no_argument, NULL, 'f' },
     { 0, 0, 0, 0 },
   };
   int option, option_index;
@@ -479,9 +488,18 @@ int main(int argc, char **argv) {
   /* parse command line arguments */
   while (1) {
 
-    option = getopt_long(argc, argv, "dhvk", options, &option_index);
+    option = getopt_long(argc, argv, "dhvkf:", options, &option_index);
     
     switch (option) {
+
+    case 'f':
+      strncpy(xc->config, optarg, strlen(optarg));
+      xc->config[strlen(optarg)] = '\0';
+      break;      
+
+    case 'k':
+      xc_show_keys(xc);
+      exit(EXIT_SUCCESS);
 
     case 'd':
       xc->debug = True;
@@ -495,11 +513,6 @@ int main(int argc, char **argv) {
       
     case 'v':
       xc_version(xc);
-      exit(EXIT_SUCCESS);
-      break;      
-
-    case 'k':
-      xc_show_keys(xc);
       exit(EXIT_SUCCESS);
       break;      
 
