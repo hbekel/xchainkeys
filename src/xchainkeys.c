@@ -198,7 +198,7 @@ void xc_parse_config(XChainKeys_t *self) {
     while(line[0] != '\0') {
       len = strcspn(line, ws);
       
-      token = calloc(1, (len+1)*sizeof(char));
+      token = calloc((len+1), sizeof(char));
       strncpy(token, line, len);
 
       line += strcspn(line, ws);

@@ -135,7 +135,7 @@ void key_ungrab(Key_t *self) {
 
 char *key_to_str(Key_t *self) {
 
-  char *str = (char *) calloc(1, sizeof(char));
+  char *str = (char *) calloc(256, sizeof(char));
 
   if (self->modifiers & LockMask)    strcat(str, "lock-");
   if (self->modifiers & ControlMask) strcat(str, "C-");
