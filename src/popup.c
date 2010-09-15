@@ -98,6 +98,7 @@ void popup_update(Popup_t *self) {
 
 void popup_show(Popup_t *self) {
   XMapWindow(self->display, self->window);
+  XRaiseWindow(self->display, self->window);
   self->mapped = True;
   popup_update(self);
 }
