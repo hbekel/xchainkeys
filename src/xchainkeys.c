@@ -110,7 +110,6 @@ void xc_find_config(XChainKeys_t *self) {
   
   self->config = (char *) calloc(4096, sizeof(char));
 
-  /* determine config file self->config */
   strcpy(self->config, getenv("HOME"));
   
   if(getenv("XDG_CONFIG_HOME") != NULL ) {
@@ -130,7 +129,7 @@ void xc_parse_config(XChainKeys_t *self) {
   char *line, *token, *expect;
   const char *ws = " \t"; 
   int linenum = 0;
-  int len, pos, i;
+  int len, pos;
 
   Key_t *key;
   Binding_t *binding;
@@ -308,31 +307,8 @@ void xc_parse_config(XChainKeys_t *self) {
   }
   fclose(f);
 
-  /* parse binding arguments */
-  binding_parse_arguments(xc->root);
-
-  /* add defaults */
-  for (i=0; i<self->root->num_children; i++) {
-    parent = self->root->children[i];
-    if (parent->action == XC_ACTION_ENTER) {
-
-      /* create default :escape binding unless present */
-      if (!binding_get_child_by_action(parent, XC_ACTION_ESCAPE)) {
-	binding = binding_new();
-	binding->action = XC_ACTION_ESCAPE;
-	binding->key = parent->key;
-	binding_append_child(parent, binding);
-      }
-
-      /* create default :abort binding unless present */
-      if (!binding_get_child_by_action(parent, XC_ACTION_ABORT)) {
-	binding = binding_new();
-	binding->action = XC_ACTION_ABORT;
-	binding->key = key_new("C-g");
-	binding_append_child(parent, binding);
-      }
-    }
-  }
+  binding_parse_arguments(self->root);
+  binding_create_default_bindings(self->root);
 
   /* initialize popup window */
   self->popup = popup_new(self->display, font, fg, bg);

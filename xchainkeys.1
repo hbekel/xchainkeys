@@ -46,6 +46,8 @@ be overriden by a \fBtimeout\fP argument supplied to an \fB:enter\fP
 action, see \fBActions\fP below.
 .IP \fBfeedback\fP\ \fI<on|off>\fP\ (default:\ \fIon\fP)
 
+Enable or disable the feedback popup window.
+.IP \fBdelay\fP\ \fI<msecs>\fP\ (default:\ \fIon\fP)
 Delay in milliseconds before showing the feedback popup window that
 displays the current position in the keychain. This value also defines
 the amount of time to show the popup window after the keychain has
@@ -73,7 +75,7 @@ followed by a symbolic \fBkey name\fP, each separated by a hyphen
 
     \fI<mod>\fP-\fB[\fP\fI<mod>\fP-...\fB]\fP\fI<keyname>\fP
 
-\fBModifier\ names\fP include the follwing single upper-case characters:
+\fBModifier\ names\fP include the following single upper-case characters:
 
 .RS	
     \fIS\fP     Shift key
@@ -179,10 +181,10 @@ In conclusion, the above example is equivalent to simply using\fB
 Here's an example for using \fP:repeat\fP to implement a dedicated
 frame resize mode for the \fBmusca\fP(1) window manager:\fB
 
-     C-w C-i :repeat musca -c 'resize up'
-     C-w C-k :repeat musca -c 'resize down'
-     C-w C-j :repeat musca -c 'resize left'
-     C-w C-l :repeat musca -c 'resize right'
+     C-w i :repeat musca -c 'resize up'
+     C-w k :repeat musca -c 'resize down'
+     C-w j :repeat musca -c 'resize left'
+     C-w l :repeat musca -c 'resize right'
 
      C-w ... (other bindings for window management)
 

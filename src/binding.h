@@ -17,6 +17,7 @@ typedef struct Binding Binding_t;
 Binding_t* binding_new();
 void binding_set_action(Binding_t *self, char *str);
 void binding_parse_arguments(Binding_t *self);
+void binding_create_default_bindings(Binding_t *self);
 void binding_append_child(Binding_t *self, Binding_t *child);
 Binding_t *binding_get_child_by_key(Binding_t *self, Key_t *key);
 Binding_t *binding_get_child_by_action(Binding_t *self, int action);

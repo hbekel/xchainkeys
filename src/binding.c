@@ -114,6 +114,37 @@ void binding_parse_arguments(Binding_t *self) {
   }
 }
 
+void binding_create_default_bindings(Binding_t *self) {
+
+  Binding_t *binding;
+  int i;
+
+  if(self->parent != NULL && self->action == XC_ACTION_ENTER) {
+
+    /* create default :escape binding unless present */
+    if (!binding_get_child_by_action(self, XC_ACTION_ESCAPE)) {
+      binding = binding_new();
+      binding->action = XC_ACTION_ESCAPE;
+      binding->key = self->key;
+      binding_append_child(self, binding);
+    }
+    
+    /* create default :abort binding unless present */
+    if (!binding_get_child_by_action(self, XC_ACTION_ABORT)) {
+      binding = binding_new();
+      binding->action = XC_ACTION_ABORT;
+      binding->key = key_new("C-g");
+      binding_append_child(self, binding);
+    }
+  }
+  
+  /* recurse children */
+  for (i=0; i<self->num_children; i++) {
+    binding_create_default_bindings(self->children[i]);
+  }
+
+}
+
 void binding_append_child(Binding_t *self, Binding_t *child) {
   self->children[self->num_children] = child;
   child->parent = self;
