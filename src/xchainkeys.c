@@ -150,11 +150,12 @@ void xc_parse_config(XChainKeys_t *self) {
   f = fopen(self->config, "r");
   
   if(f == NULL) {
-    fprintf(stderr, "error: '%s': %s\n", self->config, strerror(errno));
+    fprintf(stderr, "%s: error: '%s': %s\n", 
+	    PACKAGE_NAME, self->config, strerror(errno));
     exit(EXIT_FAILURE);
   }
 
-  if (self->debug) fprintf(stderr, "Parsing config file %s...\n", self->config);
+  if (self->debug) printf("Parsing config file %s\n", self->config);
 
   /* parse file */
   while(fgets(buffer, 4096, f) != NULL) {
@@ -172,8 +173,6 @@ void xc_parse_config(XChainKeys_t *self) {
     if( line[strlen(line)-1] == '\n' )
       line[strlen(line)-1] = '\0';
     
-    /* if (self->debug) fprintf(stderr, "%s\n", line); */
-
     /* parse options */
     if( strncmp(line, "timeout", 7) == 0 ) {
       line += 7;
@@ -248,8 +247,6 @@ void xc_parse_config(XChainKeys_t *self) {
       if( token[0] == ':' )
 	expect = "action";
 
-      /* if (self->debug) fprintf(stderr, "%d: (expect %s) '%s'\n", pos, expect, token); */
-
       if (strcmp(expect, "key") == 0) {
 	if ((key = key_new(token)) != NULL) {
 
@@ -272,9 +269,9 @@ void xc_parse_config(XChainKeys_t *self) {
 	  parent = binding;
 	}
 	else {
-	  fprintf(stderr, 
-		  "Warning: Invalid keyspec: '%s'. Use %s -k to show valid keyspecs.\n",
-		  token, PACKAGE_NAME);
+	  fprintf(stderr,
+		  "%s: warning: Invalid keyspec: '%s'. Use %s -k to show valid keyspecs.\n",
+		  PACKAGE_NAME, token, PACKAGE_NAME);
 	  fprintf(stderr, "-> Skipping line %d: '%s'\n", linenum, buffer);
 	  goto next_line;
 	}

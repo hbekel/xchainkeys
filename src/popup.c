@@ -54,14 +54,15 @@ void* popup_new(Display *display, char *font, char *fg, char *bg) {
   
   self->gc = XCreateGC(self->display, self->window, valuemask, &values);
   if (self->gc < 0) {
-    fprintf(stderr, "XCreateGC: \n");
+    printf("XCreateGC: \n");
     exit(EXIT_FAILURE);
   }
   XSetForeground(self->display, self->gc, fgcolor.pixel);
 
   self->font = XLoadQueryFont(self->display, font);
   if (!self->font) {
-    fprintf(stderr, "XLoadQueryFont: error loading font '%s'\n", font);
+    fprintf(stderr, "%s: error: XLoadQueryFont: failed to load font '%s'\n", 
+	    PACKAGE_NAME, font);
     exit(EXIT_FAILURE);
   }
   XSetFont(self->display, self->gc, self->font->fid);

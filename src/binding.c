@@ -143,7 +143,7 @@ void binding_activate(Binding_t *self) {
   path = binding_to_path(self);
 
   if (xc->debug) 
-    fprintf(stderr, " -> %s %s %s\n", 
+    printf(" -> %s %s %s\n", 
 	    path, xc->action_names[self->action], self->argument);
 
   switch(self->action) {
@@ -206,7 +206,7 @@ void binding_enter(Binding_t *self) {
     if(self->timeout > 0) {
       
       if(now >= timeout && self->timeout > 0) {
-	if (xc->debug) fprintf(stderr, "Timed out\n");
+	if (xc->debug) printf("Timed out\n");
 	done = True;
 	continue;
       }
@@ -237,7 +237,7 @@ void binding_enter(Binding_t *self) {
 	    
 	    /* :abort from here... */
 	    if (binding->action == XC_ACTION_ABORT) {
-	      if (xc->debug) fprintf(stderr, "Aborted\n");
+	      if (xc->debug) printf("Aborted\n");
 	      done = True;
 	      free(key);
 	      continue;
@@ -253,7 +253,7 @@ void binding_enter(Binding_t *self) {
 	    popup_set_timeout(xc->popup, xc->delay);
 
 	    if (xc->debug) 
-	      fprintf(stderr, " -> %s %s: no binding\n", path, keyspec);
+	      printf(" -> %s %s: no binding\n", path, keyspec);
 	    free(keyspec);
 	  }	
 
@@ -294,7 +294,7 @@ void binding_escape(Binding_t *self) {
 
   if (xc->debug) {
     keyspec = key_to_str(self->parent->key);
-      fprintf(stderr, "Sending synthetic KeyPressEvent (%s) to window id %d\n", 
+      printf("Sending synthetic KeyPressEvent (%s) to window id %d\n", 
 	      keyspec, (int)focused);
     free(keyspec);
   }
@@ -432,11 +432,11 @@ void binding_list(Binding_t *self) {
     current = current->parent;      
   }
   for( i=1; i<depth; i++ )
-    fprintf(stderr, "    ");  
+    printf("    ");  
 
   if(depth > 0) {
     keyspec = key_to_str(self->key);
-    fprintf(stderr, "%s %s %s\n", 
+    printf("%s %s %s\n", 
 	    keyspec, xc->action_names[self->action], self->argument);
     free(keyspec);
   }
