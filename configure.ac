@@ -2,11 +2,12 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.65])
-AC_INIT([xchainkeys], [0.2], [h.bekel@googlemail.com], [], [])
-AM_INIT_AUTOMAKE([xchainkeys], [0.2])
+AC_INIT([xchainkeys], [0.3], [h.bekel@googlemail.com], [], [])
+AM_INIT_AUTOMAKE([xchainkeys], [0.3])
 
 # Checks for programs.
 AC_PROG_CC
+AC_PROG_SED
 
 # Checks for libraries.
 AC_CHECK_LIB(X11, XOpenDisplay,

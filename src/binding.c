@@ -163,6 +163,10 @@ void binding_activate(Binding_t *self) {
   case XC_ACTION_REPEAT:
     binding_repeat(self);
     break;
+
+  case XC_ACTION_SEND:
+    binding_send(self);
+    break;
   }
   free(path);
 }
@@ -281,39 +285,38 @@ void binding_enter(Binding_t *self) {
 
 void binding_escape(Binding_t *self) {
 
-  XKeyEvent e;
-  Window focused;
+  Window window;
   int focus_ret;
-  char *keyspec;
 
   if(self->parent == NULL)
     return;
 
   XUngrabKeyboard(xc->display, CurrentTime);
-  XGetInputFocus(xc->display, &focused, &focus_ret);
+  XGetInputFocus(xc->display, &window, &focus_ret);
 
-  if (xc->debug) {
-    keyspec = key_to_str(self->parent->key);
-      printf("Sending synthetic KeyPressEvent (%s) to window id %d\n", 
-	      keyspec, (int)focused);
-    free(keyspec);
-  }
-
-  e.display = xc->display;
-  e.subwindow = None;
-  e.time = CurrentTime;
-  e.same_screen = True;	   
-  e.x = e.y = e.x_root = e.y_root = 1;
-  e.window = focused;
-  e.keycode = self->parent->key->keycode;
-  e.state = self->parent->key->modifiers;
-  e.type = KeyPress;
-  
-  XSendEvent(xc->display, e.window, True, KeyPressMask, (XEvent *)&e);
-  XSync(xc->display, False);
+  xc_send_key(xc, self->parent->key, window);
 
   XGrabKeyboard(xc->display, DefaultRootWindow(xc->display),
 		True, GrabModeAsync, GrabModeAsync, CurrentTime);
+}
+
+void binding_send(Binding_t *self) {
+
+  Key_t *key;
+  Window root = DefaultRootWindow(xc->display);
+
+  key = key_new(self->argument);
+
+  if (key != NULL) {
+
+    XUngrabKeyboard(xc->display, CurrentTime);
+
+    xc_send_key(xc, key, root);
+
+    XGrabKeyboard(xc->display, DefaultRootWindow(xc->display),
+		  True, GrabModeAsync, GrabModeAsync, CurrentTime);
+    free(key);
+  }
 }
 
 void binding_repeat(Binding_t *self) {

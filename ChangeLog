@@ -1,3 +1,16 @@
+2010-09-16  Henning Bekel <h.bekel@googlemail.com>
+
+	* Released version 0.3
+	* Added timeout and abort options to :enter action
+	* Added new action :repeat
+	* Added option --file to load an alternative config file
+	* Added option feedback [on|off] (requested by tum)
+	* Added capitalized generic modifier names (requested by tum)
+	* Fixed invalid free()'s in config parsing (reported by tum)
+	* Fixed popup window is not raised when shown
+	* Updated documentation, added a manual page
+	* Code cleanups and minor bugfixes
+
 2010-09-15  Henning Bekel <h.bekel@googlemail.com>
 
 	* Released version 0.2

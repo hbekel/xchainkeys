@@ -60,7 +60,8 @@ XChainKeys_t* xc_new(Display *display) {
   self->action_names[3] = ":abort";
   self->action_names[4] = ":exec";
   self->action_names[5] = ":repeat";
-  self->num_actions = 6;
+  self->action_names[6] = ":send";
+  self->num_actions = 7;
 
   self->root = binding_new();
   self->root->action = XC_ACTION_NONE;
@@ -461,6 +462,32 @@ void xc_show_keys(XChainKeys_t *self) {
       free(key);
     }
   }
+}
+
+void xc_send_key(XChainKeys_t *self, Key_t *key, Window window) {
+
+  XKeyEvent e;
+  char *keyspec;
+
+  if (self->debug) {
+    keyspec = key_to_str(key);
+      printf("Sending synthetic KeyPressEvent (%s) to window id %d\n", 
+	      keyspec, (int)window);
+    free(keyspec);
+  }
+
+  e.display = self->display;
+  e.window = window;
+  e.subwindow = None;
+  e.time = CurrentTime;
+  e.same_screen = True;	   
+  e.keycode = key->keycode;
+  e.state = key->modifiers;
+  e.type = KeyPress;
+  e.x = e.y = e.x_root = e.y_root = 1;
+  
+  XSendEvent(self->display, e.window, True, KeyPressMask, (XEvent *)&e);
+  XSync(self->display, False);
 }
 
 int xc_keycode_to_modmask(XChainKeys_t *self, KeyCode keycode) {
