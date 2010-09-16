@@ -310,6 +310,9 @@ void xc_parse_config(XChainKeys_t *self) {
   }
   fclose(f);
 
+  /* parse binding arguments */
+  binding_parse_arguments(xc->root);
+
   /* add defaults */
   for (i=0; i<self->root->num_children; i++) {
     parent = self->root->children[i];

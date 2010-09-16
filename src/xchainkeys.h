@@ -33,4 +33,7 @@ long xc_get_msec();
 #define XC_ACTION_EXEC   4
 #define XC_ACTION_REPEAT 5
 
+#define XC_ABORT_AUTO 1
+#define XC_ABORT_MANUAL 0
+
 #endif /* ifndef XCHAINKEYS_H */

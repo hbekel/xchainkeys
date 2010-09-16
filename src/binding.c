@@ -18,9 +18,13 @@ extern XChainKeys_t *xc;
 
 Binding_t* binding_new() {
   Binding_t *self = (Binding_t *) calloc(1, sizeof(Binding_t));
+
   self->key = NULL;
   self->action = XC_ACTION_ENTER;
   self->argument = "";
+
+  self->timeout = 3000;
+  self->abort = XC_ABORT_AUTO;
 
   self->parent = NULL;
   self->num_children = 0;
@@ -35,6 +39,78 @@ void binding_set_action(Binding_t *self, char *str) {
       self->action = i;
       break;
     }
+  }
+}
+
+void binding_parse_arguments(Binding_t *self) {
+
+  char *argument;
+  char *argument_ptr;
+  char *value;
+  char *value_ptr;
+
+  char *ws = " \t";
+  int i;
+  
+  if(self->action == XC_ACTION_ENTER) {
+  
+    /* initially set the timeout from the (now parsed) global timeout */
+    self->timeout = xc->timeout;
+  
+    argument = (char *) calloc(strlen(self->argument)+1, sizeof(char));
+    argument_ptr = argument;
+
+    strncpy(argument, self->argument, strlen(self->argument));
+
+    while(strlen(argument)) {
+      if(strncmp(argument, "timeout=", 8) == 0) {
+
+	value = (char *) calloc(strlen(argument)+1, sizeof(char));
+	value_ptr = value;
+
+	strncpy(value, argument, strlen(argument));
+	value += 8;
+	value[strcspn(value, ws)] = '\0';
+	
+	self->timeout = atoi(value);
+
+	argument += 8 + strlen(value);
+	argument += strspn(argument, ws);
+
+	free(value_ptr);
+      }
+
+      if(strncmp(argument, "abort=", 6) == 0) {
+
+	value = (char *) calloc(strlen(argument)+1, sizeof(char));
+	value_ptr = value;
+
+	strncpy(value, argument, strlen(argument));
+	value += 6;
+	value[strcspn(value, ws)] = '\0';
+	
+	if(strcmp(value, "auto") == 0) 
+	  self->abort = XC_ABORT_AUTO;
+
+	if(strcmp(value, "manual") == 0)
+	  self->abort = XC_ABORT_MANUAL;
+
+	argument += 6 + strlen(value);
+	argument += strspn(argument, ws);
+
+	free(value_ptr);
+      }
+
+      argument+=strcspn(argument, ws);
+      if(strcspn(argument, ws) == 0)
+	break;
+    }
+    free(argument_ptr);
+  }
+
+  /* recurse into children and parse their arguments as well */
+  for( i=0; i<self->num_children; i++ ) {
+    binding_parse_arguments(self->children[i]);
   }
 }
 
@@ -105,7 +181,7 @@ void binding_enter(Binding_t *self) {
   /* prepare timeout and popup delay */
   now = xc_get_msec();
   delay = now + xc->delay;
-  timeout = xc_get_msec() + xc->timeout;
+  timeout = xc_get_msec() + self->timeout;
 
   /* prepare popup */
   snprintf(xc->popup->text, strlen(path)+1, "%s", path);
@@ -126,10 +202,10 @@ void binding_enter(Binding_t *self) {
     if(now >= delay && !xc->popup->mapped)
       popup_show(xc->popup);
 
-    /* abort on timeout (unless in chroot) */
-    if(strncmp(self->argument, "chroot", 6) != 0) {
+    /* abort on timeout */
+    if(self->timeout > 0) {
       
-      if(now >= timeout && xc->timeout > 0) {
+      if(now >= timeout && self->timeout > 0) {
 	if (xc->debug) fprintf(stderr, "Timed out\n");
 	done = True;
 	continue;
@@ -141,16 +217,15 @@ void binding_enter(Binding_t *self) {
       XNextEvent(xc->display, &event);
       
       /* dispatch exec, abort or escape */
-      switch(event.type) {
-      case KeyPress:
-	
+      if(event.type == KeyPress) {
+
 	/* get keycode and keystr */
 	keycode = ((XKeyPressedEvent*)&event)->keycode;
 	keystr = XKeysymToString(XKeycodeToKeysym(xc->display, keycode, 0));
 	
 	/* check if this key is a modifier */
 	if (xc_keycode_to_modmask(xc, keycode) != 0) {
-	  break;
+	  continue;
 	}      
 	else {	
 	  /* non-modifier key hit... */
@@ -164,7 +239,8 @@ void binding_enter(Binding_t *self) {
 	    if (binding->action == XC_ACTION_ABORT) {
 	      if (xc->debug) fprintf(stderr, "Aborted\n");
 	      done = True;
-	      break;
+	      free(key);
+	      continue;
 	    }
 	    
 	    /* ... or activate the binding */
@@ -181,17 +257,16 @@ void binding_enter(Binding_t *self) {
 	    free(keyspec);
 	  }	
 
-	  /* done, exit this keymap unless we're in a chroot */
-	  if(strncmp(self->argument, "chroot", 6) != 0)
+	  /* done, exit this keymap unless manual abort was requested */
+	  if (self->abort == XC_ABORT_AUTO)
 	    done = True;
-
+	  
 	  free(key);
-	  break;
 	}
       }
     }
   }
-
+  
   /* ungrab keyboard... */
   if (self->parent == xc->root) {
     XUngrabKeyboard(xc->display, CurrentTime);
@@ -288,9 +363,9 @@ void binding_repeat(Binding_t *self) {
 	  abort = True;
 	}
 	if(abort) {
-	  /* if the aborting key matches any root chains or chroots
-	   * bindings, prepare immediate re-entry into that chain from
-	   * xc_mainloop() 
+	  /* if the aborting key matches any root :enter bindings,
+	   * prepare immediate re-entry into that chain from
+	   * xc_mainloop()
 	   */
 
 	  for(i=0; i<xc->root->num_children; i++) {
