@@ -3,7 +3,7 @@
 
 struct Binding {
   Key_t *key;
-  char *action;
+  int action;
   char *argument;
   struct Binding *parent;
   
@@ -13,9 +13,10 @@ struct Binding {
 typedef struct Binding Binding_t;
 
 Binding_t* binding_new();
+void binding_set_action(Binding_t *self, char *str);
 void binding_append_child(Binding_t *self, Binding_t *child);
 Binding_t *binding_get_child_by_key(Binding_t *self, Key_t *key);
-Binding_t *binding_get_child_by_action(Binding_t *self, char *action);
+Binding_t *binding_get_child_by_action(Binding_t *self, int action);
 void binding_activate(Binding_t *self);
 void binding_enter(Binding_t *self);
 void binding_escape(Binding_t *self);

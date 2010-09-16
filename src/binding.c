@@ -19,13 +19,23 @@ extern XChainKeys_t *xc;
 Binding_t* binding_new() {
   Binding_t *self = (Binding_t *) calloc(1, sizeof(Binding_t));
   self->key = NULL;
-  self->action = ":enter";
+  self->action = XC_ACTION_ENTER;
   self->argument = "";
 
   self->parent = NULL;
   self->num_children = 0;
 
   return self;
+}
+
+void binding_set_action(Binding_t *self, char *str) {
+  int i;
+  for( i=0; i<xc->num_actions; i++) {
+    if(strncmp(xc->action_names[i], str, strlen(str)) == 0) {
+      self->action = i;
+      break;
+    }
+  }
 }
 
 void binding_append_child(Binding_t *self, Binding_t *child) {
@@ -43,10 +53,10 @@ Binding_t *binding_get_child_by_key(Binding_t *self, Key_t *key) {
   return NULL;
 }
 
-Binding_t *binding_get_child_by_action(Binding_t *self, char *action) {
+Binding_t *binding_get_child_by_action(Binding_t *self, int action) {
   int i;
   for( i=0; i<self->num_children; i++ ) {
-    if (strcmp(self->children[i]->action, action) == 0)
+    if (self->children[i]->action == action)
       return self->children[i];
   }	   
   return NULL;
@@ -58,20 +68,26 @@ void binding_activate(Binding_t *self) {
 
   if (xc->debug) 
     fprintf(stderr, " -> %s %s %s\n", 
-	    path, self->action, self->argument);
+	    path, xc->action_names[self->action], self->argument);
 
-  if(strcmp(self->action, ":enter") == 0)
+  switch(self->action) {
+
+  case XC_ACTION_ENTER:
     binding_enter(self);
+    break;
 
-  if(strcmp(self->action, ":escape") == 0)
+  case XC_ACTION_ESCAPE:
     binding_escape(self);
+    break;
 
-  if(strcmp(self->action, ":exec") == 0)
+  case XC_ACTION_EXEC:    
     binding_exec(self);
+    break;
 
-  if(strcmp(self->action, ":repeat") == 0)
+  case XC_ACTION_REPEAT:
     binding_repeat(self);
-
+    break;
+  }
   free(path);
 }
 
@@ -145,7 +161,7 @@ void binding_enter(Binding_t *self) {
 	  if( (binding = binding_get_child_by_key(self, key)) != NULL) {
 	    
 	    /* :abort from here... */
-	    if (strcmp(binding->action, ":abort") == 0) {
+	    if (binding->action == XC_ACTION_ABORT) {
 	      if (xc->debug) fprintf(stderr, "Aborted\n");
 	      done = True;
 	      break;
@@ -262,7 +278,7 @@ void binding_repeat(Binding_t *self) {
 	for(i=0; i<self->parent->num_children; i++) {
 	  binding = self->parent->children[i];
 
-	  if ( strcmp(binding->action, ":repeat") == 0) { 
+	  if ( binding->action == XC_ACTION_REPEAT) { 
 	    if ( key_equals(binding->key, key) ) {
 	      binding_exec(binding);
 	      abort = False;
@@ -279,7 +295,7 @@ void binding_repeat(Binding_t *self) {
 
 	  for(i=0; i<xc->root->num_children; i++) {
 	    binding = xc->root->children[i];
-	    if ( strcmp(binding->action, ":enter") == 0 &&
+	    if ( binding->action == XC_ACTION_ENTER &&
 		 key_equals(binding->key, key) ) {
 	      xc->reentry = binding;
 	    }
@@ -345,7 +361,8 @@ void binding_list(Binding_t *self) {
 
   if(depth > 0) {
     keyspec = key_to_str(self->key);
-    fprintf(stderr, "%s %s %s\n", keyspec, self->action, self->argument);
+    fprintf(stderr, "%s %s %s\n", 
+	    keyspec, xc->action_names[self->action], self->argument);
     free(keyspec);
   }
 

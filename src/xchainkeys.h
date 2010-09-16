@@ -5,6 +5,8 @@ typedef struct XChainKeys {
   Display *display;  
   XModifierKeymap *xmodmap;
   int modmask[8];
+  char *action_names[6];
+  int num_actions;
   int debug;
   unsigned int timeout;
   unsigned int delay;
@@ -23,5 +25,12 @@ void xc_mainloop(XChainKeys_t *self);
 int xc_keycode_to_modmask(XChainKeys_t *self, KeyCode keycode);
 unsigned int xc_get_modifiers(XChainKeys_t *self);
 long xc_get_msec();
+
+#define XC_ACTION_NONE   0
+#define XC_ACTION_ENTER  1
+#define XC_ACTION_ESCAPE 2
+#define XC_ACTION_ABORT  3
+#define XC_ACTION_EXEC   4
+#define XC_ACTION_REPEAT 5
 
 #endif /* ifndef XCHAINKEYS_H */

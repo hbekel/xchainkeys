@@ -51,11 +51,23 @@ XChainKeys_t* xc_new(Display *display) {
   self->debug = False;
   self->timeout = 3000;
   self->delay = 1000;
-  self->root = binding_new();
-  self->root->action = ":root";
   self->reentry = NULL;
   self->xmodmap = XGetModifierMapping(self->display);
   
+  self->action_names[0] = ":none";
+  self->action_names[1] = ":enter";
+  self->action_names[2] = ":escape";
+  self->action_names[3] = ":abort";
+  self->action_names[4] = ":exec";
+  self->action_names[5] = ":repeat";
+  self->num_actions = 6;
+
+  self->root = binding_new();
+  self->root->action = XC_ACTION_NONE;
+  
+  /* prepare modmask array, containing all possible combinations of
+   * num, caps and scroll lock */
+
   i = 0;
   num = 
     xc_keycode_to_modmask(self, XKeysymToKeycode(self->display, XStringToKeysym("Num_Lock")));
@@ -269,7 +281,7 @@ void xc_parse_config(XChainKeys_t *self) {
       }
       
       if (strcmp(expect, "action") == 0) {
-	binding->action = strdup(token);
+	binding_set_action(binding, token);
 	expect = "argument";
 	goto next_token;
       }
@@ -301,20 +313,20 @@ void xc_parse_config(XChainKeys_t *self) {
   /* add defaults */
   for (i=0; i<self->root->num_children; i++) {
     parent = self->root->children[i];
-    if (strcmp(parent->action, ":enter") == 0) {
+    if (parent->action == XC_ACTION_ENTER) {
 
       /* create default :escape binding unless present */
-      if (!binding_get_child_by_action(parent, ":escape")) {
+      if (!binding_get_child_by_action(parent, XC_ACTION_ESCAPE)) {
 	binding = binding_new();
-	binding->action = ":escape";
+	binding->action = XC_ACTION_ESCAPE;
 	binding->key = parent->key;
 	binding_append_child(parent, binding);
       }
 
       /* create default :abort binding unless present */
-      if (!binding_get_child_by_action(parent, ":abort")) {
+      if (!binding_get_child_by_action(parent, XC_ACTION_ABORT)) {
 	binding = binding_new();
-	binding->action = ":abort";
+	binding->action = XC_ACTION_ABORT;
 	binding->key = key_new("C-g");
 	binding_append_child(parent, binding);
       }
