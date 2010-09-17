@@ -1,15 +1,12 @@
 .TH XCHAINKEYS 1 "2010-09-16" "Linux" "User manuals"
 .SH NAME
 \fBxchainkeys\fP \- chained keybindings for X11
-
 .SH SYNOPSIS
 \fBxchainkeys\fP [\fIoptions\fP]
-
 .SH DESCRIPTION
 \fBxchainkeys\fP is a standalone X11 program to create chained key
 bindings similar to those found in the \fBratpoison\fP(1) window
 manager or the \fBscreen\fP(1) terminal multiplexer.
-
 .SH OPTIONS
 .IP \fB-f\fP,\ \fB--file\fP\ \fIfilename\fP
 Load an alternative configuration file.
@@ -21,7 +18,6 @@ Show debug messages on stdout.
 Show usage information.
 .IP \fB-v\fP,\ \fB--version\fP
 Show version information.
-
 .SH CONFIGURATION
 The config file location is \fI~/.config/xchainkeys/xchainkeys.conf\fP
 
@@ -63,17 +59,18 @@ The foreground color of the text and the border of the feedback window.
 
 The background color of the feedback window.
 .SS Keybinding Definitions
-A keybinding definition contains one or more key specifications, an
-action name and optional action arguments, all separated by
-whitespace:
+A keybinding definition contains one or more key specifications,
+followed by an action specifier prefixed with a semicolon (":"),
+followed by an optional action name enclosed in double quotes,
+followed by optional action arguments, all separated by whitespace:
 
-    \fI<keyspec>\fP \fB[\fP\fI<keyspec>\fP...\fB]\fP \fI<action>\fP \fB[\fP\fI<arguments>\fP...\fB]\fP
+    \fI<keyspec>\fP \fB[\fP\fI<keyspec>\fP\fB...]\fP :\fI<action>\fP \fB[\fP"\fI<name>\fP"\fB]\fP\ \fB[\fP\fI<arguments>\fP\fB...]\fP
 
 A \fIkeyspec\fP consists of one or more optional \fBmodifier names\fP,
 followed by a symbolic \fBkey name\fP, each separated by a hyphen
 ('-'):
 
-    \fI<mod>\fP-\fB[\fP\fI<mod>\fP-...\fB]\fP\fI<keyname>\fP
+    \fI<mod>\fP-\fB[\fP\fI<mod>\fP-\fB...]\fP\fI<keyname>\fP
 
 \fBModifier\ names\fP include the following single upper-case characters:
 
@@ -135,8 +132,8 @@ application and abort the chain. This is implemented using
 synthetic events generated with \fBXSendEvent\fP.
 .IP \fB:exec\fP\ \fI<argument>\fP
 Asynchroniously execute \fIargument\fP as a shell command. 
-.IP \fB:repeat\fP\ \fI<argument>\fP
-Similar to \fB:exec\fP. When a key bound to \fB:repeat\fP is activated
+.IP \fB:group\fP\ \fI<argument>\fP
+Similar to \fB:exec\fP. When a key bound to \fB:group\fP is activated
 for the first time in a chain, then the chain timeout will be disabled
 and the abort mode will be set to \fImanual\fP. The action can be
 repeatetly invoked until the chain is aborted. All other non-repeating
@@ -145,6 +142,8 @@ will instead abort the chain. In addition, if the aborting key is a
 toplevel chain \fBprefix key\fP, the corresponding chain will be
 entered immediately after this chain aborts. See \fBEXAMPLES\fP below
 for possible uses.
+.IP \fB:repeat\fP\ \fI<argument>\fP
+Deprecated. Equivalent to \fB:group\fP \fI"default"\fP.
 .SH EXAMPLES
 Here's an explicit example to create a keychain prefixed with
 C-t:\fB
@@ -178,13 +177,13 @@ In conclusion, the above example is equivalent to simply using\fB
 
 \fPcan be invoked by pressing C-t and then typing "xchainkeys". 
 
-Here's an example for using \fP:repeat\fP to implement a dedicated
-frame resize mode for the \fBmusca\fP(1) window manager:\fB
+Here's an example for using a named \fP:group\fP to implement a
+dedicated frame resize mode for the \fBmusca\fP(1) window manager:\fB
 
-     C-w i :repeat musca -c 'resize up'
-     C-w k :repeat musca -c 'resize down'
-     C-w j :repeat musca -c 'resize left'
-     C-w l :repeat musca -c 'resize right'
+     C-w i :group "resize" musca -c 'resize up'
+     C-w k :group "resize" musca -c 'resize down'
+     C-w j :group "resize" musca -c 'resize left'
+     C-w l :group "resize" musca -c 'resize right'
 
      C-w ... (other bindings for window management)
 
@@ -196,7 +195,7 @@ resize mode again. If you want to invoke another window management
 command right away, you can use C-w to quit resize mode and
 immediately enter the C-w chain (or any other toplevel chain) again.
 
-The benefit of using \fB:repeat\fP over a dedicated chain with
+The benefit of using a \fB:group\fP over a dedicated chain with
 timeout=0 and abort=manual is that you don't have to waste another
 prefix key for this purpose but instead temporarily redefine an
 existing chain to contain 'repeating' keys only.
@@ -204,7 +203,6 @@ existing chain to contain 'repeating' keys only.
 Please file bugs on the googlecode issue tracker.
 
 http://code.google.com/p/xchainkeys/issues
-
 .SH COPYRIGHT
 Copyright (C) 2010 Henning Bekel <h.bekel at googlemail dot com>
 .SH LICENSE

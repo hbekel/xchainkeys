@@ -32,7 +32,7 @@ long xc_get_msec();
 #define XC_ACTION_ESCAPE 2
 #define XC_ACTION_ABORT  3
 #define XC_ACTION_EXEC   4
-#define XC_ACTION_REPEAT 5
+#define XC_ACTION_GROUP  5
 #define XC_ACTION_SEND   6
 
 #define XC_ABORT_AUTO 1

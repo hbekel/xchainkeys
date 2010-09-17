@@ -89,6 +89,9 @@ void popup_update(Popup_t *self) {
 
   XMoveResizeWindow(self->display, self->window,
 		    self->x, self->y, self->w, self->h);
+
+  XClearArea(self->display, self->window,
+	     0, 0, 0, 0,False);
   XFlush(self->display);
 
   XDrawString(self->display, self->window, self->gc,

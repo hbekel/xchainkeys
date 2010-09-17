@@ -21,6 +21,7 @@ Binding_t* binding_new() {
 
   self->key = NULL;
   self->action = XC_ACTION_ENTER;
+  self->name = "default";
   self->argument = "";
 
   self->timeout = 3000;
@@ -39,6 +40,13 @@ void binding_set_action(Binding_t *self, char *str) {
       self->action = i;
       break;
     }
+  }
+  if(strcmp(str, ":repeat") == 0) {
+    self->action = XC_ACTION_GROUP;
+    self->name = "default";
+    fprintf(stderr, 
+	    "%s: warning: ':repeat' is deprecated, using ':group \"default\"' instead.\n",
+	    PACKAGE_NAME);
   }
 }
 
@@ -191,8 +199,8 @@ void binding_activate(Binding_t *self) {
     binding_exec(self);
     break;
 
-  case XC_ACTION_REPEAT:
-    binding_repeat(self);
+  case XC_ACTION_GROUP:
+    binding_group(self);
     break;
 
   case XC_ACTION_SEND:
@@ -350,7 +358,7 @@ void binding_send(Binding_t *self) {
   }
 }
 
-void binding_repeat(Binding_t *self) {
+void binding_group(Binding_t *self) {
   Key_t *key;
   Binding_t *binding;
   XEvent event;
@@ -381,18 +389,19 @@ void binding_repeat(Binding_t *self) {
 	key = key_new(keystr);
 	key->modifiers = xc_get_modifiers(xc);
 	
-	/* :exec all :repeat actions in the parent binding 
-	 * abort on any non-repeating key
+	/* :exec any :group actions of the same name in the parent
+	 * binding, and abort on any non-repeating key
 	 */
 	for(i=0; i<self->parent->num_children; i++) {
 	  binding = self->parent->children[i];
+	  
+	  if ( binding->action == XC_ACTION_GROUP &&
+	       strcmp(binding->name, self->name) == 0 &&
+	       key_equals(binding->key, key) ) {
 
-	  if ( binding->action == XC_ACTION_REPEAT) { 
-	    if ( key_equals(binding->key, key) ) {
-	      binding_exec(binding);
-	      abort = False;
-	      break;
-	    }
+	    binding_exec(binding);
+	    abort = False;
+	    break;
 	  }
 	  abort = True;
 	}
@@ -470,8 +479,14 @@ void binding_list(Binding_t *self) {
 
   if(depth > 0) {
     keyspec = key_to_str(self->key);
-    printf("%s %s %s\n", 
-	    keyspec, xc->action_names[self->action], self->argument);
+    
+    if(strcmp(self->name, "default") == 0)
+      printf("%s %s %s\n", 
+	     keyspec, xc->action_names[self->action], self->argument);
+    else 
+      printf("%s %s \"%s\" %s\n", 
+	     keyspec, xc->action_names[self->action], self->name, self->argument);
+
     free(keyspec);
   }
 

@@ -59,7 +59,7 @@ XChainKeys_t* xc_new(Display *display) {
   self->action_names[2] = ":escape";
   self->action_names[3] = ":abort";
   self->action_names[4] = ":exec";
-  self->action_names[5] = ":repeat";
+  self->action_names[5] = ":group";
   self->action_names[6] = ":send";
   self->num_actions = 7;
 
@@ -279,8 +279,23 @@ void xc_parse_config(XChainKeys_t *self) {
       
       if (strcmp(expect, "action") == 0) {
 	binding_set_action(binding, token);
-	expect = "argument";
+	expect = "name";
 	goto next_token;
+      }
+
+      if (strcmp(expect, "name") == 0) {
+	if( token[0] == '"' && token[strlen(token)-1] == '"' ) {
+	  token += 1; 
+	  token[strlen(token)-1] = '\0';
+
+	  binding->name = strdup(token);
+	  token -= 1;
+	  expect = "argument";
+	  goto next_token;
+	}
+	else {
+	  expect = "argument";
+	}
       }
 
       if (strcmp(expect, "argument") == 0) {
