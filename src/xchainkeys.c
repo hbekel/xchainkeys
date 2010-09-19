@@ -126,7 +126,7 @@ void xc_parse_config(XChainKeys_t *self) {
   FILE *f;
   char *buffer = (char *) calloc(4096, sizeof(char));
   char *argument= (char *) calloc(4096, sizeof(char));
-  char *line, *token, *expect;
+  char *line, *token, *expect, *path;
   const char *ws = " \t"; 
   int linenum = 0;
   int len, pos;
@@ -134,6 +134,7 @@ void xc_parse_config(XChainKeys_t *self) {
   Key_t *key;
   Binding_t *binding;
   Binding_t *parent;
+  Binding_t *existing;
 
   int feedback = True;
 
@@ -160,6 +161,7 @@ void xc_parse_config(XChainKeys_t *self) {
   /* parse file */
   while(fgets(buffer, 4096, f) != NULL) {
     linenum++;
+    //strcpy(line, buffer);
     line = buffer;
 
     /* discard whitespace at the beginning */
@@ -207,7 +209,8 @@ void xc_parse_config(XChainKeys_t *self) {
       line += 4;
       line += strspn(line, ws);
       line[strcspn(line, ws)] = '\0';
-      font = strdup(line);
+      strncpy(font, line, strlen(line));
+      font[strlen(line)] = '\0';
       continue;
     }
 
@@ -215,7 +218,8 @@ void xc_parse_config(XChainKeys_t *self) {
       line += 10;
       line += strspn(line, ws);
       line[strcspn(line, ws)] = '\0';
-      fg = strdup(line);
+      strncpy(fg, line, strlen(line));
+      fg[strlen(line)] = '\0';
       continue;
     }
 
@@ -223,7 +227,8 @@ void xc_parse_config(XChainKeys_t *self) {
       line += 10;
       line += strspn(line, ws);
       line[strcspn(line, ws)] = '\0';
-      bg = strdup(line);
+      strncpy(bg, line, strlen(line));
+      bg[strlen(line)] = '\0';
       continue;
     }
 
@@ -253,10 +258,24 @@ void xc_parse_config(XChainKeys_t *self) {
 	  /* if this key is already bound in the parent binding,
 	   * then make that binding the parent binding for the next key
 	   */
-	  if(binding_get_child_by_key(parent, key) != NULL) {
-	    parent = binding_get_child_by_key(parent, key);
-	    goto next_token;
-	  }  
+	  existing = binding_get_child_by_key(parent, key);
+
+	  if( existing != NULL) {
+	    if(line[0] == ':' || line[0] == '\0') {
+	      path = binding_to_path(existing);
+	      fprintf(stderr, "%s: warning: line %d: %s: already bound, skipping...\n",
+		      PACKAGE_NAME, linenum, path);
+	      free(path);
+	      free(key);
+	      free(token);
+	      goto next_line;
+	    }
+	    else {
+	      parent = binding_get_child_by_key(parent, key);
+	      free(key);
+	      goto next_token;
+	    }
+	  }
 
 	  /* create a binding for this key */
 	  binding = binding_new();
@@ -270,9 +289,9 @@ void xc_parse_config(XChainKeys_t *self) {
 	}
 	else {
 	  fprintf(stderr,
-		  "%s: warning: Invalid keyspec: '%s'. Use %s -k to show valid keyspecs.\n",
-		  PACKAGE_NAME, token, PACKAGE_NAME);
-	  fprintf(stderr, "-> Skipping line %d: '%s'\n", linenum, buffer);
+		  "%s: warning: line %d: %s: invalid keyspec, skipping...\n",
+		  PACKAGE_NAME, linenum, token);
+	  free(token);
 	  goto next_line;
 	}
       }
@@ -349,7 +368,6 @@ void xc_parse_config(XChainKeys_t *self) {
   }
   free(buffer);
   free(argument);
-
   free(font);
   free(fg);
   free(bg);
