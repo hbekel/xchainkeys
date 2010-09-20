@@ -74,6 +74,7 @@ void binding_parse_arguments(Binding_t *self) {
     strncpy(argument, self->argument, strlen(self->argument));
 
     while(strlen(argument)) {
+
       if(strncmp(argument, "timeout=", 8) == 0) {
 
 	value = (char *) calloc(strlen(argument)+1, sizeof(char));
@@ -112,7 +113,6 @@ void binding_parse_arguments(Binding_t *self) {
 	free(value_ptr);
       }
 
-      argument+=strcspn(argument, ws);
       if(strcspn(argument, ws) == 0)
 	break;
     }

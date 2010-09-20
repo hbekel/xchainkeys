@@ -8,8 +8,7 @@ struct Binding {
   char *name;
   int timeout;
   int abort;
-  struct Binding *parent;
-  
+  struct Binding *parent;  
   int num_children;
   struct Binding *children[1024];
 };
