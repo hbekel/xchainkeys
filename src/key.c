@@ -43,10 +43,10 @@ int key_parse_keyspec(Key_t *self, char *keyspec) {
     strncpy(str, keyspec, len);
     str[len] = '\0';
     
-    if(!key_add_modifier(self, str))
-      fprintf(stderr, "%s: warning: ignoring unknown modifier '%s' in keyspec '%s'\n", 
-	      PACKAGE_NAME, str, original_keyspec);
-
+    if(!key_add_modifier(self, str)) {
+      free(original_keyspec);
+      return False;
+    }
     keyspec += len + 1;
   }
   

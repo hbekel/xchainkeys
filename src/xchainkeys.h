@@ -17,7 +17,8 @@ typedef struct XChainKeys {
   struct Binding *reentry;
 } XChainKeys_t;
 
-XChainKeys_t* xc_new(Display *display);
+XChainKeys_t* xc_new(void);
+void xc_parse_options(XChainKeys_t *self, int argc, char **argv);
 void xc_init_modmask(XChainKeys_t *self);
 void xc_show_keys(XChainKeys_t *self);
 void xc_find_config(XChainKeys_t *self);

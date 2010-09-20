@@ -12,10 +12,15 @@ extern XChainKeys_t *xc;
 void version() {
   printf("%s %s Copyright (C) 2010 Henning Bekel <%s>\n",
 	 PACKAGE_NAME, PACKAGE_VERSION, PACKAGE_BUGREPORT);
+
+  printf("License GPLv3: GNU GPL version 3 <http://gnu.org/licenses/gpl.html>\n\n");
+  printf("This is free software; you are free to change and redistribute it.\n");
+  printf("There is NO WARRANTY, to the extent permitted by law.\n");
 }
 
 void usage() {
   version();
+  printf("\n");
   printf("Usage: %s [options]\n\n", PACKAGE_NAME);
   printf("  -f, --file    : alternative config file\n");
   printf("  -k, --keys    : Show valid keyspecs\n");

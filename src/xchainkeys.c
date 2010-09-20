@@ -40,13 +40,16 @@
 
 XChainKeys_t *xc;
 
-XChainKeys_t* xc_new(Display *display) {
+XChainKeys_t* xc_new() {
 
-  XChainKeys_t *self;
+  XChainKeys_t *self = (XChainKeys_t *) calloc(1, sizeof(XChainKeys_t)); 
 
-  self = (XChainKeys_t *) calloc(1, sizeof(XChainKeys_t)); 
+  if (NULL==(self->display=XOpenDisplay(NULL))) {
+    free(self);
+    perror(PACKAGE_NAME);
+    exit(EXIT_FAILURE);
+  }
 
-  self->display = display;
   self->debug = False;
   self->timeout = 3000;
   self->delay = 1000;
@@ -74,28 +77,29 @@ XChainKeys_t* xc_new(Display *display) {
 }
 
 void xc_init_modmask(XChainKeys_t *self) {
-  int i=0;
   unsigned int num, caps, scroll;
 
-  /* prepare modmask array, containing all possible combinations of
-   * num, caps and scroll lock */
+  /* self->modmask contains all possible combinations of num, caps and
+   * scroll lock */
 
   num = 
-    keycode_to_modifier(self->xmodmap, XKeysymToKeycode(self->display, XStringToKeysym("Num_Lock")));
+    keycode_to_modifier(self->xmodmap, 
+			XKeysymToKeycode(self->display, XStringToKeysym("Num_Lock")));
   caps = 
-    keycode_to_modifier(self->xmodmap, XKeysymToKeycode(self->display, XStringToKeysym("Caps_Lock")));
+    keycode_to_modifier(self->xmodmap, 
+			XKeysymToKeycode(self->display, XStringToKeysym("Caps_Lock")));
   scroll = 
-    keycode_to_modifier(self->xmodmap, XKeysymToKeycode(self->display, XStringToKeysym("Scoll_Lock")));
+    keycode_to_modifier(self->xmodmap, 
+			XKeysymToKeycode(self->display, XStringToKeysym("Scoll_Lock")));
 
-  i = 0;
-  self->modmask[i++] = 0;
-  self->modmask[i++] = num;
-  self->modmask[i++] = caps;
-  self->modmask[i++] = scroll;
-  self->modmask[i++] = num | caps;
-  self->modmask[i++] = num | scroll;
-  self->modmask[i++] = caps | scroll;
-  self->modmask[i++] = num | caps | scroll;
+  self->modmask[0] = 0;
+  self->modmask[1] = num;
+  self->modmask[2] = caps;
+  self->modmask[3] = scroll;
+  self->modmask[4] = num | caps;
+  self->modmask[5] = num | scroll;
+  self->modmask[6] = caps | scroll;
+  self->modmask[7] = num | caps | scroll;
 }
 
 void xc_show_keys(XChainKeys_t *self) {
@@ -498,9 +502,7 @@ void xc_reload(XChainKeys_t *self) {
   xc_grab_prefix_keys(self);
 }
 
-int main(int argc, char **argv) {
-
-  Display *display;
+void xc_parse_options(XChainKeys_t *self, int argc, char **argv) {
 
   struct option options[] = {
     { "debug", no_argument, NULL, 'd' },
@@ -512,16 +514,6 @@ int main(int argc, char **argv) {
   };
   int option, option_index;
 
-  /* try to open a connection to the X display */
-  if (NULL==(display=XOpenDisplay(NULL))) {
-    perror(argv[0]);
-    exit(EXIT_FAILURE);
-  }
-
-  /* create XChainkeys instance */
-  xc = xc_new(display);
- 
-  /* parse command line arguments */
   while (1) {
 
     option = getopt_long(argc, argv, "dhvkf:", options, &option_index);
@@ -529,17 +521,18 @@ int main(int argc, char **argv) {
     switch (option) {
 
     case 'f':
-      strncpy(xc->config, optarg, strlen(optarg));
-      xc->config[strlen(optarg)] = '\0';
+      strncpy(self->config, optarg, strlen(optarg));
+      self->config[strlen(optarg)] = '\0';
       break;      
 
     case 'k':
-      xc_show_keys(xc);
+      xc_show_keys(self);
       exit(EXIT_SUCCESS);
 
     case 'd':
-      xc->debug = True;
+      self->debug = True;
       version();
+      printf("\n");
       break;
       
     case 'h':
@@ -562,12 +555,15 @@ int main(int argc, char **argv) {
     }
     if(option == -1)
       break;
-  }
+  }  
+}
 
-  /* parse config file */
+int main(int argc, char **argv) {
+
+  xc = xc_new();
+
+  xc_parse_options(xc, argc, argv);
   xc_parse_config(xc);
-
-  /* enter mainloop */
   xc_mainloop(xc);
 
   exit(EXIT_SUCCESS);
