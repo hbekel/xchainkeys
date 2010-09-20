@@ -130,8 +130,12 @@ void key_grab(Key_t *self) {
 }
 
 void key_ungrab(Key_t *self) {
-  XUngrabKey(xc->display, self->keycode, self->modifiers, 
-	   DefaultRootWindow(xc->display));
+  int i;
+
+  for( i=0; i<8; i++ ) {
+    XUngrabKey(xc->display, self->keycode, self->modifiers | xc->modmask[i], 
+	       DefaultRootWindow(xc->display));
+  }
 }
 
 char *key_to_str(Key_t *self) {

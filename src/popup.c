@@ -125,7 +125,8 @@ void popup_set_timeout(Popup_t *self, unsigned int ms) {
   self->timeout = now + ms;
 }
 
-void popup_destroy(Popup_t *self) {
+void popup_free(Popup_t *self) {
+  XFreeFont(self->display, self->font);
   XFreeGC(self->display, self->gc);
   free(self);
 }

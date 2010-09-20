@@ -21,9 +21,12 @@ Binding_t* binding_new() {
 
   self->key = NULL;
   self->action = XC_ACTION_ENTER;
-  self->name = "default";
-  self->argument = "";
 
+  self->name = calloc(128, sizeof(char));
+  strcpy(self->name, "default");
+
+  self->argument = calloc(4096, sizeof(char));
+  
   self->timeout = 3000;
   self->abort = XC_ABORT_AUTO;
 
@@ -125,6 +128,7 @@ void binding_parse_arguments(Binding_t *self) {
 void binding_create_default_bindings(Binding_t *self) {
 
   Binding_t *binding;
+  char *keyspec;
   int i;
 
   if(self->parent != NULL && self->action == XC_ACTION_ENTER) {
@@ -133,7 +137,11 @@ void binding_create_default_bindings(Binding_t *self) {
     if (!binding_get_child_by_action(self, XC_ACTION_ESCAPE)) {
       binding = binding_new();
       binding->action = XC_ACTION_ESCAPE;
-      binding->key = self->key;
+
+      keyspec = key_to_str(self->key);
+      binding->key = key_new(keyspec);
+      free(keyspec);
+
       binding_append_child(self, binding);
     }
     
@@ -205,6 +213,12 @@ void binding_activate(Binding_t *self) {
 
   case XC_ACTION_SEND:
     binding_send(self);
+    break;
+
+  case XC_ACTION_LOAD:
+    if(strlen(self->argument))
+      strcpy(xc->config, self->argument);
+    xc->reload = True;
     break;
   }
   free(path);
@@ -493,4 +507,19 @@ void binding_list(Binding_t *self) {
   for( i=0; i<self->num_children; i++ ) {
     binding_list(self->children[i]);
   }
+}
+
+void binding_free(Binding_t *self) {
+  int i;
+
+  for( i=0; i<self->num_children; i++ ) {
+    binding_free(self->children[i]);
+    self->children[i] = NULL;
+  }
+  self->num_children = 0;
+  self->parent = NULL;
+  free(self->name);
+  free(self->argument);
+  free(self->key);
+  free(self);
 }

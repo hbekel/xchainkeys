@@ -52,6 +52,7 @@ XChainKeys_t* xc_new(Display *display) {
   self->timeout = 3000;
   self->delay = 1000;
   self->reentry = NULL;
+  self->reload = False;
   self->xmodmap = XGetModifierMapping(self->display);
   
   self->action_names[0] = ":none";
@@ -61,7 +62,8 @@ XChainKeys_t* xc_new(Display *display) {
   self->action_names[4] = ":exec";
   self->action_names[5] = ":group";
   self->action_names[6] = ":send";
-  self->num_actions = 7;
+  self->action_names[7] = ":load";
+  self->num_actions = 8;
 
   self->root = binding_new();
   self->root->action = XC_ACTION_NONE;
@@ -89,6 +91,29 @@ XChainKeys_t* xc_new(Display *display) {
   xc_find_config(self);
 
   return self;
+}
+
+void xc_reload(XChainKeys_t *self) {  
+  xc_reset(self);
+  xc_parse_config(self);
+  xc_grab_keys(self);
+}
+
+void xc_reset(XChainKeys_t *self) {
+  int i;
+
+  for(i=0; i<self->root->num_children; i++) {
+    key_ungrab(self->root->children[i]->key);
+    binding_free(self->root->children[i]);
+    self->root->children[i] = NULL;
+  }
+  self->root->num_children = 0;
+
+  self->reentry = NULL;
+  self->reload = False;
+
+  popup_free(self->popup);
+  self->popup = NULL;
 }
 
 void xc_version(XChainKeys_t *self) {
@@ -161,7 +186,6 @@ void xc_parse_config(XChainKeys_t *self) {
   /* parse file */
   while(fgets(buffer, 4096, f) != NULL) {
     linenum++;
-    //strcpy(line, buffer);
     line = buffer;
 
     /* discard whitespace at the beginning */
@@ -307,7 +331,7 @@ void xc_parse_config(XChainKeys_t *self) {
 	  token += 1; 
 	  token[strlen(token)-1] = '\0';
 
-	  binding->name = strdup(token);
+	  strcpy(binding->name, token);
 	  token -= 1;
 	  expect = "argument";
 	  goto next_token;
@@ -333,7 +357,7 @@ void xc_parse_config(XChainKeys_t *self) {
     if (binding != NULL) {
       /* append the argument to the current binding */
       if (strlen(argument)) {
-	binding->argument = strdup(argument);
+	strcpy(binding->argument, argument);
       }
     }
   next_line:
@@ -373,6 +397,14 @@ void xc_parse_config(XChainKeys_t *self) {
   free(bg);
 }
 
+void xc_grab_keys(XChainKeys_t *self) {
+  /* grab top level keys individually */
+  int i;
+  for (i=0; i<self->root->num_children; i++) {
+    key_grab(self->root->children[i]->key);    
+  }
+}
+
 void xc_mainloop(XChainKeys_t *self) {
   Binding_t *binding;
   Binding_t *reentry;
@@ -381,11 +413,7 @@ void xc_mainloop(XChainKeys_t *self) {
   long now;
   int i;
 
-  /* grab top level keys individually */
-  for (i=0; i<self->root->num_children; i++) {
-    binding = self->root->children[i];
-    key_grab(binding->key);    
-  }
+  xc_grab_keys(self);
 
   while(True) {
 
@@ -427,6 +455,10 @@ void xc_mainloop(XChainKeys_t *self) {
       xc->reentry = NULL;
       binding_activate(reentry);
       goto reentry;
+    }
+
+    if(xc->reload) {
+      xc_reload(self);
     }
   }
 }

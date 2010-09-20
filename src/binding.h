@@ -30,5 +30,6 @@ void binding_exec(Binding_t *self);
 void binding_group(Binding_t *self);
 char *binding_to_path(Binding_t *self);
 void binding_list(Binding_t *self);
+void binding_free(Binding_t *self);
 
 #endif /* #ifndef BINDING_H */
