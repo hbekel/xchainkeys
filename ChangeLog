@@ -1,3 +1,15 @@
+2010-09-20  Henning Bekel  <h.bekel@googlemail.com>
+
+	* Released version 0.4
+	* Deprecated :repeat action in favor of a new :group action
+	* Added :load and :reload actions to load config files
+	* Fixed possibility of creating of non-abortable chains
+	* Fixed segfault on binding a key sequence multiple times
+	* Fixed argument parsing for :enter action
+	* Improved error reporting
+	* Updated manual page
+	* Code cleanups
+
 2010-09-16  Henning Bekel <h.bekel@googlemail.com>
 
 	* Released version 0.3

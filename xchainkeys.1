@@ -4,11 +4,11 @@
 .SH SYNOPSIS
 \fBxchainkeys\fP [\fIoptions\fP]
 .SH DESCRIPTION
-\fBxchainkeys\fP is a standalone X11 program to create chained key
+xchainkeys is a standalone X11 program to create chained key
 bindings similar to those found in the \fBratpoison\fP(1) window
 manager or the \fBscreen\fP(1) terminal multiplexer.
 .SH OPTIONS
-.IP \fB-f\fP,\ \fB--file\fP\ \fIfilename\fP
+.IP \fB-f\fP,\ \fB--file\fP\ \fI<filename>\fP
 Load an alternative configuration file.
 .IP \fB-k\fP,\ \fB--keys\fP
 Interactively show valid keyspecs for key combinations.
@@ -19,60 +19,62 @@ Show usage information.
 .IP \fB-v\fP,\ \fB--version\fP
 Show version information.
 .SH CONFIGURATION
-The config file location is \fI~/.config/xchainkeys/xchainkeys.conf\fP
+The configuration file is located at 
+
+\fI~/.config/xchainkeys/xchainkeys.conf\fP
 
 The \fIXDG_CONFIG_HOME\fP environment variable will be respected in
 compliance with the \fBXDG Base Directory Specification\fP (see
-\fBREFERENCES below\fP).
+\fBREFERENCES\fP below).
 
 An example configuration file has been installed to
 
 \fI__PREFIX__/share/doc/xchainkeys/example.conf\fP
 .SS Syntax
-Each line may contain a global setting or a keybinding definition.
-Empty lines and lines starting with a numbersign ('#') are ignored.
+Each line may contain either a global setting or a keybinding
+definition. Empty lines and lines starting with a numbersign (#) are
+ignored.
 .SS Global Settings
 Global settings are defined as key-value pairs, separated by
 whitespace.
-.IP \fBtimeout\fP\ \fI<msecs>\fP\ (default:\ \fI3000\fP)
+.IP \fBtimeout\fP\ \fI<n>\fP\ (default:\ \fI3000\fP)
 
-Time in milliseconds to wait before automatically aborting an active
-keychain. A value of 0 will prevent automatic timeout. This value may
-be overriden by a \fBtimeout\fP argument supplied to an \fB:enter\fP
-action, see \fBActions\fP below.
+Wait \fIn\fP milliseconds for another key to be pressed before
+aborting an active keychain. A value of 0 will prevent automatic
+timeout. This value may be overriden by a \fBtimeout\fP argument
+supplied to an \fB:enter\fP action, see \fBActions\fP below.
 .IP \fBfeedback\fP\ \fI<on|off>\fP\ (default:\ \fIon\fP)
 
-Enable or disable the feedback popup window.
-.IP \fBdelay\fP\ \fI<msecs>\fP\ (default:\ \fIon\fP)
-Delay in milliseconds before showing the feedback popup window that
-displays the current position in the keychain. This value also defines
-the amount of time to show the popup window after the keychain has
-been completed or aborted, e.g. to display a warning message about
-unbound keys being pressed.
+Show feedback about the current chain position in a small popup window.
+.IP \fBdelay\fP\ \fI<n>\fP\ (default:\ \fI1000\fP)
+Delay in milliseconds before showing the feedback window . Also
+defines the amount of time to show the feedback window after the
+keychain has been completed or aborted, e.g. to display a warning
+message about an unbound key being pressed.
 .IP \fBfont\fP\ \fI<fontstring>\fP\ (default:\ \fIfixed\fP)
 
 The X11 font to use for text in the feedback window.
 .IP \fBforeground\fP\ \fI<name|#rrggbb>\fP\ (default:\ \fIblack\fP)
 
 The foreground color of the text and the border of the feedback window.
-.IP \fBback\fP\ \fI<name|#rrggbb>\fP\ (default:\ \fIwhite\fP)
+.IP \fBbackground\fP\ \fI<name|#rrggbb>\fP\ (default:\ \fIwhite\fP)
 
 The background color of the feedback window.
-.SS Keybinding Definitions
-A keybinding definition contains one or more key specifications,
-followed by an action specifier prefixed with a semicolon (":"),
-followed by an optional action name enclosed in double quotes,
-followed by optional action arguments, all separated by whitespace:
+.SS Keybindings
+Keybindings are defined using the following syntax:
 
     \fI<keyspec>\fP \fB[\fP\fI<keyspec>\fP\fB...]\fP :\fI<action>\fP \fB[\fP"\fI<name>\fP"\fB]\fP\ \fB[\fP\fI<arguments>\fP\fB...]\fP
 
 A \fIkeyspec\fP consists of one or more optional \fBmodifier names\fP,
 followed by a symbolic \fBkey name\fP, each separated by a hyphen
-('-'):
+(-):
 
     \fI<mod>\fP-\fB[\fP\fI<mod>\fP-\fB...]\fP\fI<keyname>\fP
 
-\fBModifier\ names\fP include the following single upper-case characters:
+(You can use \fBxchainkeys -k\fP to find the proper \fIkeyspec\fP for
+key combinations.)
+
+Modifier names include the following single upper-case characters:
 
 .RS	
     \fIS\fP     Shift key
@@ -85,100 +87,88 @@ The generic modifier names \fIShift\fP, \fILock\fP, \fIControl\fP,
 \fIMod1\fP, \fIMod2\fP, \fIMod3\fP, \fIMod4\fP and \fIMod5\fP are
 recognized in addition to the above.
 
-\fBKey\ names\fP correspond to the symbolic key names defined in
-\fI/usr/include/X11/keysymdef.h\fP (with their \fIXK_\fP prefix removed).
-
-Use \fBxchainkeys -k\fP to find the proper \fIkeyspec\fP for a certain
-modifier/key combination.
-.SS Keybindings and Keychains
-The first key given in a keybinding definition is grabbed globally by
-using \fBXGrabKey\fP(3). These bindings will exist alongside any other
-global keybindings created by other programs such as a window manager
-or desktop environment. 
-
-If a sequence of keys is given, a keychain will by created. The first
-key of the chain becomes the \fBprefix key\fP and will be bound to the
-\fB:enter\fP action (see \fBActions\fP below).
-
-Once a chain is entered with a \fBprefix\fP key, the keyboard will be
-grabbed exclusively, temporarily disabling all global bindings from
-other programs, until the chain is completed or aborted.
+Key names correspond to the symbolic key names defined in
+\fI/usr/include/X11/keysymdef.h\fP (with their \fIXK_\fP prefix
+removed).
 .SS Actions
 
-.IP \fB:enter\fP\ [\fBtimeout=\fP\fI<msecs>\fP]\ [\fBabort=\fP\fI<auto|manual>\fP]
+.IP \fB:enter\fP\ [\fBtimeout=\fP\fI<n>\fP]\ [\fBabort=\fP\fI<auto|manual>\fP]
 
 Enters a keychain. The keyboard will be grabbed exclusively until
-another key is pressed (completing or aborting the chain) or the chain
-times out after \fImsecs\fP milliseconds given by the \fBtimeout\fP
-argument. If the key is bound within this chain, its action will be
-invoked, otherwise the user will be notified that an unbound key has
-been pressed. 
+another keystroke has been processed, or until the chain times out
+after \fIn\fP milliseconds. If the key is bound within this chain,
+the associated action will be invoked, otherwise the user will be
+notified that an unbound key has been pressed.
 
-If the \fPabort\fP argument is set to \fIauto\fP, the chain will abort
-immediately after a key (bound or not) is pressed. If set to
-\fImanual\fP, the chain will remain active until it is manually
-aborted with the \fB:abort\fP action.
+If the \fPabort\fP argument is set to \fImanual\fP, the chain prefix
+will remain activated and further keystrokes will be processed until
+the chain is manually aborted with the \fB:abort\fP action. If set to
+\fIauto\fP (the default), the chain will abort immediately after the
+first keystroke has been processed.
 
 If the \fBtimeout\fP argument is omitted, the global timeout setting
-will apply. If the \fBabort\fP argument is omitted, it defaults to
-\fIauto\fP.
+will apply. A value of \fI0\fP disables the timeout for this chain.
 .IP \fB:abort\fP
 Abort the current keychain, releasing any previous grab on the
-keyboard.
+keyboard. If not explicitly bound, \fB:abort\fP will be bound to
+\fBprefix C-g\fP by default.
 .IP \fB:escape\fP
 Send the \fBprefix key\fP key of this chain to the currently focused
-application and abort the chain. This is implemented using
-\fBXSendEvent(3)\fP. Note that applications may refuse to accept
-synthetic events generated with \fBXSendEvent\fP.
-.IP \fB:exec\fP\ \fI<argument>\fP
-Asynchroniously execute \fIargument\fP as a shell command. 
-.IP \fB:group\fP\ \fI<argument>\fP
-Similar to \fB:exec\fP. When a key bound to \fB:group\fP is activated
-for the first time in a chain, then the chain timeout will be disabled
-and the abort mode will be set to \fImanual\fP. The action can be
-repeatetly invoked until the chain is aborted. All other non-repeating
-keys in this chain will be ignored as long as this chain is open, and
-will instead abort the chain. In addition, if the aborting key is a
-toplevel chain \fBprefix key\fP, the corresponding chain will be
-entered immediately after this chain aborts. See \fBEXAMPLES\fP below
-for possible uses.
-.IP \fB:repeat\fP\ \fI<argument>\fP
-Deprecated. Equivalent to \fB:group\fP \fI"default"\fP.
+window and abort the chain. If not explicitly bound, \fB:escape\fP
+will be bound to \fBprefix prefix\fP, e.g. for a chain prefixed with
+\fBC-t\fP the \fB:escape\fP action will be bound to \fBC-t C-t\fP by
+default.
+
+This feature is implemented using \fBXSendEvent(3)\fP. Note that
+applications may refuse to accept synthetic events generated with
+\fBXSendEvent\fP.
+.IP \fB:exec\fP\ \fI<command>\fP
+Asynchroniously execute \fIcommand\fP as a shell command. 
+.IP \fB:group\fP\ \fB[\fP"\fI<name>\fP"\fB]\fP\ \fI<command>\fP
+Associate a binding with a named group and asynchroniously execute
+\fIcommand\fP as a shell command.
+
+When a \fB:group\fP action is activated, timeout and automatic abort
+are disabled for the current chain prefix, and only bindings in the
+same group will be recognized for subsequent key presses. Any other
+keys will abort the chain and revert the above changes.
+
+In addition, if the key used to abort the chain key is a toplevel
+chain \fBprefix key\fP, the corresponding chain will be entered
+immediately after this chain aborts. See \fBEXAMPLES\fP below for
+possible uses.
+
+If no explicit name is given, the group name "default" is used.
+.IP \fB:repeat\fP\ \fI<command>\fP
+Deprecated. Equivalent to \fB:group\fP \fB"default"\fP.
+.IP \fB:load\fP\ [\fI<filename>\fP]
+.IP \fB:reload\fP\ [\fI<filename>\fP]
+Clear the current bindings and (re)load the configuration file specified
+by \fIfilename\fP. If no file is specified, the current configuration
+file is reloaded.
 .SH EXAMPLES
-Here's an explicit example to create a keychain prefixed with
-C-t:\fB
-
-    C-t :enter                   # C-t enters the keychain
-    C-t C-t :escape              # C-t C-t sends C-t
-    C-t C-g :abort               # C-t C-g aborts the chain
-    C-t Return :exec xterm       # C-t Return executes xterm
-
-\fPA key that appears at the beginning of a chained keybinding is
-implictly bound to the \fB:enter\fP action if it hasn't been bound to
-\fB:enter\fP before. Thus the first line in the example above is
-superfluous.
-
-If the \fB:escape\fP action is not explicitly bound in a toplevel
-keychain, it will be bound to the chain's \fBprefix key\fP by
-default. The second line in the example above is thus also
-superfluous.
-
-If the \fB:abort\fP action is not explicitly bound in a toplevel
-keychain, it will be bound to 'C-g' by default. Thus the third line
-above is superfluous again.
-
-In conclusion, the above example is equivalent to simply using\fB
+Bind the key sequence "Control-t Return" to run xterm:\fP
 
      C-t Return :exec xterm
+
+\fPThis implies creating a default chain with the prefix key
+\fBC-t\fP, containing default bindings for the \fB:abort\fP and
+\fB:escape\fP actions, and is thus equivalent to\fB
+
+    C-t :enter timeout=3000 abort=auto
+    C-t C-t :escape                   
+    C-t C-g :abort                    
+    C-t Return :exec xterm            
 
 \fPNote that the number of keys in a keychain is not limited, e.g\fB
 
      C-t x c h a i n k e y s :exec xmessage "xchainkeys!"
 
-\fPcan be invoked by pressing C-t and then typing "xchainkeys". 
+\fPcan be invoked by pressing \fBC-t\fP and then typing "xchainkeys". 
 
-Here's an example for using a named \fP:group\fP to implement a
-dedicated frame resize mode for the \fBmusca\fP(1) window manager:\fB
+The following example creates a named \fP:group\fP of bindings to
+implement a dedicated frame resize mode for the \fBmusca\fP(1) window
+manager:\fB
 
      C-w i :group "resize" musca -c 'resize up'
      C-w k :group "resize" musca -c 'resize down'
@@ -187,24 +177,30 @@ dedicated frame resize mode for the \fBmusca\fP(1) window manager:\fB
 
      C-w ... (other bindings for window management)
 
-\fPInvoke any of the above bindings (e.g. press C-w i) and then continue
-to press i, k, j or l to resize the current musca frame. Since timeout
-and automatic abort are disabled, you can continue resizing until you're
-satisfied with the result. Then simply press any other key to quit
-resize mode again. If you want to invoke another window management
-command right away, you can use C-w to quit resize mode and
-immediately enter the C-w chain (or any other toplevel chain) again.
+\fPInvoke any of the above bindings (e.g. press \fBC-w i\fP) and then
+continue to press \fBi\fP, \fBk\fP, \fBj\fP or \fBl\fP to resize the
+current musca frame. Since timeout and automatic abort are disabled,
+you can continue resizing until you are satisfied with the
+result. Then simply press any other key to quit resize mode. If
+you want to invoke another window management command right away, you
+can use \fBC-w\fP to quit resize mode and immediately enter the
+\fBC-w\fP chain (or any other toplevel chain) again.
 
-The benefit of using a \fB:group\fP over a dedicated chain with
-timeout=0 and abort=manual is that you don't have to waste another
-prefix key for this purpose but instead temporarily redefine an
-existing chain to contain 'repeating' keys only.
+The benefit of using a named \fB:group\fP over a dedicated chain with
+\fBtimeout=0\fP and \fBabort=manual\fP is that you don't have to waste
+another prefix key. Instead you can temporarily redefine an existing
+chain to contain only a specific subset of keys, behaving in the
+desired manner.
 .SH BUGS
-Please file bugs on the googlecode issue tracker.
+This software is currently in beta state. Please file bugs on the
+googlecode issue tracker.
 
 http://code.google.com/p/xchainkeys/issues
+
+Use the email address below for questions, feature requests and
+comments.
 .SH COPYRIGHT
-Copyright (C) 2010 Henning Bekel <h.bekel at googlemail dot com>
+Copyright (C) 2010 Henning Bekel <h.bekel@googlemail.com>
 .SH LICENSE
 xchainkeys is licensed under the GNU General Public License v3, see
 http://www.gnu.org/licenses/gpl.html.
@@ -217,4 +213,4 @@ http://standards.freedesktop.org/basedir-spec/basedir-spec-latest.html
 .BR Xorg (1)
 .BR screen (1)
 .BR ratpoison (1)
-.BR musca(1)
+.BR musca (1)
