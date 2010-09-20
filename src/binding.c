@@ -45,6 +45,9 @@ void binding_set_action(Binding_t *self, char *str) {
       break;
     }
   }
+  if(strcmp(str, ":reload") == 0) {
+    self->action = XC_ACTION_LOAD;
+  }
   if(strcmp(str, ":repeat") == 0) {
     self->action = XC_ACTION_GROUP;
     self->name = "default";

@@ -44,9 +44,10 @@ XChainKeys_t* xc_new() {
 
   XChainKeys_t *self = (XChainKeys_t *) calloc(1, sizeof(XChainKeys_t)); 
 
-  if (NULL==(self->display=XOpenDisplay(NULL))) {
+  if(NULL == (self->display=XOpenDisplay(NULL))) {
+    fprintf(stderr, "%s: error: XOpenDisplay() failed for DISPLAY=%s.\n", 
+	    PACKAGE_NAME, getenv("DISPLAY"));
     free(self);
-    perror(PACKAGE_NAME);
     exit(EXIT_FAILURE);
   }
 
