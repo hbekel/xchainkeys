@@ -9,6 +9,7 @@
 #include <X11/Xlib.h>
 
 #include "key.h"
+#include "util.h"
 #include "xchainkeys.h"
 
 extern XChainKeys_t *xc;
@@ -58,47 +59,14 @@ int key_parse_keyspec(Key_t *self, char *keyspec) {
 }
 
 int key_add_modifier(Key_t *self, char *str) {
+  unsigned int modifier = 0;
   
-  if( strcasecmp(str, "shift") == 0 || strcmp(str, "S") == 0) {
-    self->modifiers |= ShiftMask;
-    return 1;
-  }
-
-  if( strcasecmp(str, "lock") == 0 ) {
-    self->modifiers |= LockMask;
-    return 1;
-  }
-
-  if( strcasecmp(str, "control") == 0 || strcmp(str, "C") == 0) {
-    self->modifiers |= ControlMask;
-    return 1;
-  }
-
-  if( strcasecmp(str, "mod1") == 0 || strcmp(str, "A") == 0 || strcmp(str, "M") == 0 ) {
-    self->modifiers |= Mod1Mask;
-    return 1;
-  }
-  if( strcasecmp(str, "mod2") == 0 ) {
-    self->modifiers |= Mod2Mask;
-    return 1;
-  }
-
-  if( strcasecmp(str, "mod3") == 0 ) {
-    self->modifiers |= Mod3Mask;
-    return 1;
-  }
-
-  if( strcasecmp(str, "mod4") == 0 || strcmp(str, "W") == 0 || strcmp(str, "H") == 0 ) {
-    self->modifiers |= Mod4Mask;
-    return 1;
-  }
-
-  if( strcasecmp(str, "mod5") == 0 ) {
-    self->modifiers |= Mod4Mask;
-    return 1;
-  }
-
-  return 0;
+  if( (modifier = modname_to_modifier(str)) != 0 )
+    self->modifiers |= modifier;
+  else
+    return False;
+  
+  return True;
 }
 
 int key_set_keycode(Key_t *self, char *str) {

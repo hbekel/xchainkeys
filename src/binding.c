@@ -12,6 +12,7 @@
 #include "key.h"
 #include "binding.h"
 #include "popup.h"
+#include "util.h"
 #include "xchainkeys.h"
 
 extern XChainKeys_t *xc;
@@ -211,10 +212,6 @@ void binding_activate(Binding_t *self) {
     binding_group(self);
     break;
 
-  case XC_ACTION_SEND:
-    binding_send(self);
-    break;
-
   case XC_ACTION_LOAD:
     if(strlen(self->argument))
       strcpy(xc->config, self->argument);
@@ -236,9 +233,9 @@ void binding_enter(Binding_t *self) {
   char *path = binding_to_path(self);
 
   /* prepare timeout and popup delay */
-  now = xc_get_msec();
+  now = get_msec();
   delay = now + xc->delay;
-  timeout = xc_get_msec() + self->timeout;
+  timeout = get_msec() + self->timeout;
 
   /* prepare popup */
   snprintf(xc->popup->text, strlen(path)+1, "%s", path);
@@ -253,7 +250,7 @@ void binding_enter(Binding_t *self) {
   }
 
   while(!done) {    
-    now = xc_get_msec();
+    now = get_msec();
 
     /* show popup after delay */
     if(now >= delay && !xc->popup->mapped)
@@ -281,13 +278,13 @@ void binding_enter(Binding_t *self) {
 	keystr = XKeysymToString(XKeycodeToKeysym(xc->display, keycode, 0));
 	
 	/* check if this key is a modifier */
-	if (xc_keycode_to_modmask(xc, keycode) != 0) {
+	if (keycode_to_modifier(xc->xmodmap, keycode) != 0) {
 	  continue;
 	}      
 	else {	
 	  /* non-modifier key hit... */
 	  key = key_new(keystr);
-	  key->modifiers = xc_get_modifiers(xc);
+	  key->modifiers = get_modifiers(xc->display);
 	  
 	  /* check if this key is bound in this keymap */
 	  if( (binding = binding_get_child_by_key(self, key)) != NULL) {
@@ -347,29 +344,10 @@ void binding_escape(Binding_t *self) {
   XUngrabKeyboard(xc->display, CurrentTime);
   XGetInputFocus(xc->display, &window, &focus_ret);
 
-  xc_send_key(xc, self->parent->key, window);
+  send_key(xc->display, self->parent->key, window);
 
   XGrabKeyboard(xc->display, DefaultRootWindow(xc->display),
 		True, GrabModeAsync, GrabModeAsync, CurrentTime);
-}
-
-void binding_send(Binding_t *self) {
-
-  Key_t *key;
-  Window root = DefaultRootWindow(xc->display);
-
-  key = key_new(self->argument);
-
-  if (key != NULL) {
-
-    XUngrabKeyboard(xc->display, CurrentTime);
-
-    xc_send_key(xc, key, root);
-
-    XGrabKeyboard(xc->display, DefaultRootWindow(xc->display),
-		  True, GrabModeAsync, GrabModeAsync, CurrentTime);
-    free(key);
-  }
 }
 
 void binding_group(Binding_t *self) {
@@ -395,13 +373,13 @@ void binding_group(Binding_t *self) {
       keystr = XKeysymToString(XKeycodeToKeysym(xc->display, keycode, 0));
       
       /* check if this key is a modifier */
-      if (xc_keycode_to_modmask(xc, keycode) != 0) {
+      if (keycode_to_modifier(xc->xmodmap, keycode) != 0) {
 	break;
       }      
       else {	
 	/* non-modifier key hit... */
 	key = key_new(keystr);
-	key->modifiers = xc_get_modifiers(xc);
+	key->modifiers = get_modifiers(xc->display);
 	
 	/* :exec any :group actions of the same name in the parent
 	 * binding, and abort on any non-repeating key

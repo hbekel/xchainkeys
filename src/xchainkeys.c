@@ -30,12 +30,12 @@
 #include <string.h>
 #include <errno.h>
 #include <getopt.h>
-#include <sys/time.h>
 #include <X11/Xlib.h>
 
 #include "key.h"
 #include "binding.h"
 #include "popup.h"
+#include "util.h"
 #include "xchainkeys.h"
 
 XChainKeys_t *xc;
@@ -43,7 +43,6 @@ XChainKeys_t *xc;
 XChainKeys_t* xc_new(Display *display) {
 
   XChainKeys_t *self;
-  unsigned int i, num, caps, scroll;
 
   self = (XChainKeys_t *) calloc(1, sizeof(XChainKeys_t)); 
 
@@ -53,32 +52,42 @@ XChainKeys_t* xc_new(Display *display) {
   self->delay = 1000;
   self->reentry = NULL;
   self->reload = False;
+
   self->xmodmap = XGetModifierMapping(self->display);
-  
+  xc_init_modmask(self);
+
   self->action_names[0] = ":none";
   self->action_names[1] = ":enter";
   self->action_names[2] = ":escape";
   self->action_names[3] = ":abort";
   self->action_names[4] = ":exec";
   self->action_names[5] = ":group";
-  self->action_names[6] = ":send";
-  self->action_names[7] = ":load";
-  self->num_actions = 8;
+  self->action_names[6] = ":load";
+  self->num_actions = 7;
 
   self->root = binding_new();
   self->root->action = XC_ACTION_NONE;
   
+  xc_find_config(self);
+
+  return self;
+}
+
+void xc_init_modmask(XChainKeys_t *self) {
+  int i=0;
+  unsigned int num, caps, scroll;
+
   /* prepare modmask array, containing all possible combinations of
    * num, caps and scroll lock */
 
-  i = 0;
   num = 
-    xc_keycode_to_modmask(self, XKeysymToKeycode(self->display, XStringToKeysym("Num_Lock")));
+    keycode_to_modifier(self->xmodmap, XKeysymToKeycode(self->display, XStringToKeysym("Num_Lock")));
   caps = 
-    xc_keycode_to_modmask(self, XKeysymToKeycode(self->display, XStringToKeysym("Caps_Lock")));
+    keycode_to_modifier(self->xmodmap, XKeysymToKeycode(self->display, XStringToKeysym("Caps_Lock")));
   scroll = 
-    xc_keycode_to_modmask(self, XKeysymToKeycode(self->display, XStringToKeysym("Scoll_Lock")));
+    keycode_to_modifier(self->xmodmap, XKeysymToKeycode(self->display, XStringToKeysym("Scoll_Lock")));
 
+  i = 0;
   self->modmask[i++] = 0;
   self->modmask[i++] = num;
   self->modmask[i++] = caps;
@@ -87,48 +96,48 @@ XChainKeys_t* xc_new(Display *display) {
   self->modmask[i++] = num | scroll;
   self->modmask[i++] = caps | scroll;
   self->modmask[i++] = num | caps | scroll;
-
-  xc_find_config(self);
-
-  return self;
 }
 
-void xc_reload(XChainKeys_t *self) {  
-  xc_reset(self);
-  xc_parse_config(self);
-  xc_grab_keys(self);
-}
+void xc_show_keys(XChainKeys_t *self) {
 
-void xc_reset(XChainKeys_t *self) {
-  int i;
+  XEvent event;
+  Key_t *key;
+  KeyCode keycode;
+  char *keystr;
+  char *keyspec;
 
-  for(i=0; i<self->root->num_children; i++) {
-    key_ungrab(self->root->children[i]->key);
-    binding_free(self->root->children[i]);
-    self->root->children[i] = NULL;
+  version();
+  printf("\nPress a key combination to show the corresponding keyspec.\n");
+  printf("Press Control-c to quit.\n\n");
+  
+  XGrabKeyboard(self->display, DefaultRootWindow(self->display),
+		True, GrabModeAsync, GrabModeAsync, CurrentTime);
+
+  while(True) {
+    XNextEvent(self->display, &event);
+    switch(event.type) {
+    case KeyPress:
+      
+      keycode = ((XKeyPressedEvent*)&event)->keycode;
+      keystr = XKeysymToString(XKeycodeToKeysym(self->display, keycode, 0));
+      
+      if (keycode_to_modifier(xc->xmodmap, keycode) != 0) 
+	continue;
+      
+      if ( strcmp(keystr, "c") == 0 && get_modifiers(self->display) == ControlMask ) {
+	XUngrabKeyboard(self->display, CurrentTime);
+	return;
+      }
+      
+      key = key_new(keystr);      
+      key->modifiers = get_modifiers(self->display);
+      
+      keyspec = key_to_str(key);
+      printf("%s\n", keyspec);
+      free(keyspec);
+      free(key);
+    }
   }
-  self->root->num_children = 0;
-
-  self->reentry = NULL;
-  self->reload = False;
-
-  popup_free(self->popup);
-  self->popup = NULL;
-}
-
-void xc_version(XChainKeys_t *self) {
-  printf("%s %s Copyright (C) 2010 Henning Bekel <%s>\n",
-	 PACKAGE_NAME, PACKAGE_VERSION, PACKAGE_BUGREPORT);
-}
-
-void xc_usage(XChainKeys_t *self) {
-  printf("Usage: %s [options]\n\n", PACKAGE_NAME);
-  printf("  -d, --debug   : Enable debug messages\n");
-  printf("  -h, --help    : Print this help text\n");
-  printf("  -v, --version : Print version information\n");
-  printf("  -k, --keys    : Show valid keyspecs\n");
-  printf("  -f, --file    : alternative config file\n");
-  printf("\n");
 }
 
 void xc_find_config(XChainKeys_t *self) {
@@ -397,7 +406,7 @@ void xc_parse_config(XChainKeys_t *self) {
   free(bg);
 }
 
-void xc_grab_keys(XChainKeys_t *self) {
+void xc_grab_prefix_keys(XChainKeys_t *self) {
   /* grab top level keys individually */
   int i;
   for (i=0; i<self->root->num_children; i++) {
@@ -413,7 +422,7 @@ void xc_mainloop(XChainKeys_t *self) {
   long now;
   int i;
 
-  xc_grab_keys(self);
+  xc_grab_prefix_keys(self);
 
   while(True) {
 
@@ -421,7 +430,7 @@ void xc_mainloop(XChainKeys_t *self) {
       if(xc->popup->timeout == 0)
 	break;
       
-      now = xc_get_msec();
+      now = get_msec();
       
       if(now >= xc->popup->timeout) {
 	popup_hide(xc->popup);
@@ -438,7 +447,7 @@ void xc_mainloop(XChainKeys_t *self) {
 	binding = self->root->children[i];
 	
 	if (binding->key->keycode == keycode) {
-	  if(binding->key->modifiers == xc_get_modifiers(xc)) {
+	  if(binding->key->modifiers == get_modifiers(xc->display)) {
 
 	    popup_hide(xc->popup);
 	    xc->popup->timeout = 0;
@@ -463,123 +472,30 @@ void xc_mainloop(XChainKeys_t *self) {
   }
 }
 
-void xc_show_keys(XChainKeys_t *self) {
+void xc_reset(XChainKeys_t *self) {
+  int i;
+  Binding_t *prefix;
 
-  XEvent event;
-  Key_t *key;
-  KeyCode keycode;
-  char *keystr;
-  char *keyspec;
+  for(i=0; i<self->root->num_children; i++) {
+    prefix = self->root->children[i];
 
-  xc_version(xc);
-  printf("\nPress a key combination to show the corresponding keyspec.\n");
-  printf("Press Control-c to quit.\n");
-  
-  XGrabKeyboard(self->display, DefaultRootWindow(self->display),
-		True, GrabModeAsync, GrabModeAsync, CurrentTime);
-
-  while(True) {
-    XNextEvent(self->display, &event);
-    switch(event.type) {
-    case KeyPress:
-      
-      keycode = ((XKeyPressedEvent*)&event)->keycode;
-      keystr = XKeysymToString(XKeycodeToKeysym(self->display, keycode, 0));
-      
-      if (xc_keycode_to_modmask(xc, keycode) != 0) 
-	continue;
-      
-      if ( strcmp(keystr, "c") == 0 && xc_get_modifiers(self) == ControlMask ) {
-	XUngrabKeyboard(self->display, CurrentTime);
-	return;
-      }
-      
-      key = key_new(keystr);      
-      key->modifiers = xc_get_modifiers(self);
-      
-      keyspec = key_to_str(key);
-      printf("%s\n", keyspec);
-      free(keyspec);
-      free(key);
-    }
+    key_ungrab(prefix->key);
+    binding_free(prefix);
+    self->root->children[i] = NULL;
   }
+  self->root->num_children = 0;
+
+  self->reentry = NULL;
+  self->reload = False;
+
+  popup_free(self->popup);
+  self->popup = NULL;
 }
 
-void xc_send_key(XChainKeys_t *self, Key_t *key, Window window) {
-
-  XKeyEvent e;
-  char *keyspec;
-
-  if (self->debug) {
-    keyspec = key_to_str(key);
-      printf("Sending synthetic KeyPressEvent (%s) to window id %d\n", 
-	      keyspec, (int)window);
-    free(keyspec);
-  }
-
-  e.display = self->display;
-  e.window = window;
-  e.subwindow = None;
-  e.time = CurrentTime;
-  e.same_screen = True;	   
-  e.keycode = key->keycode;
-  e.state = key->modifiers;
-  e.type = KeyPress;
-  e.x = e.y = e.x_root = e.y_root = 1;
-  
-  XSendEvent(self->display, e.window, True, KeyPressMask, (XEvent *)&e);
-  XSync(self->display, False);
-}
-
-int xc_keycode_to_modmask(XChainKeys_t *self, KeyCode keycode) {
-
-  int i = 0;
-  int j = 0;
-  int max = self->xmodmap->max_keypermod;
-
-  for (i = 0; i < 8; i++) {
-    for (j = 0; j < max && self->xmodmap->modifiermap[(i * max) + j]; j++) {
-      if (keycode == self->xmodmap->modifiermap[(i * max) + j]) {
-        switch (i) {
-          case ShiftMapIndex: return ShiftMask; break;
-          case LockMapIndex: return LockMask; break;
-          case ControlMapIndex: return ControlMask; break;
-          case Mod1MapIndex: return Mod1Mask; break;
-          case Mod2MapIndex: return Mod2Mask; break;
-          case Mod3MapIndex: return Mod3Mask; break;
-          case Mod4MapIndex: return Mod4Mask; break;
-          case Mod5MapIndex: return Mod5Mask; break;
-        }
-      } 
-    } 
-  } 
-  return 0;
-}
-
-unsigned int xc_get_modifiers(XChainKeys_t *self) {
-
-  char keymap[32]; 
-  unsigned int keycode;
-  unsigned int modifiers = 0;
-
-  XQueryKeymap(self->display, keymap);
-
-  for (keycode = 0; keycode < 256; keycode++) {
-    if ((keymap[(keycode / 8)] & (1 << (keycode % 8))) \
-        && xc_keycode_to_modmask(self, keycode)) {
-
-      modifiers |= xc_keycode_to_modmask(self, keycode);
-    }
-  }
-  return modifiers;
-}
-
-long xc_get_msec() {
-  long msec;
-  struct timeval tv;
-  gettimeofday(&tv, NULL);
-  msec = (long)(tv.tv_sec*1000 + (tv.tv_usec/1000));
-  return msec;
+void xc_reload(XChainKeys_t *self) {  
+  xc_reset(self);
+  xc_parse_config(self);
+  xc_grab_prefix_keys(self);
 }
 
 int main(int argc, char **argv) {
@@ -596,7 +512,7 @@ int main(int argc, char **argv) {
   };
   int option, option_index;
 
-  /* try to open the x display */
+  /* try to open a connection to the X display */
   if (NULL==(display=XOpenDisplay(NULL))) {
     perror(argv[0]);
     exit(EXIT_FAILURE);
@@ -623,16 +539,16 @@ int main(int argc, char **argv) {
 
     case 'd':
       xc->debug = True;
-      xc_version(xc);
+      version();
       break;
       
     case 'h':
-      xc_usage(xc);
+      usage();
       exit(EXIT_SUCCESS);
       break;
       
     case 'v':
-      xc_version(xc);
+      version();
       exit(EXIT_SUCCESS);
       break;      
 
@@ -640,7 +556,7 @@ int main(int argc, char **argv) {
       break;
 
     default:
-      xc_usage(xc);
+      usage();
       exit(EXIT_FAILURE);
       break;
     }
@@ -656,4 +572,3 @@ int main(int argc, char **argv) {
 
   exit(EXIT_SUCCESS);
 }
-
