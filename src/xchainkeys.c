@@ -146,12 +146,13 @@ void xc_show_keys(XChainKeys_t *self) {
 
 void xc_find_config(XChainKeys_t *self) {
   
-  self->config = (char *) calloc(4096, sizeof(char));
-
-  strcpy(self->config, getenv("HOME"));
+  int n = 4096;
+  self->config = (char *) calloc(n, sizeof(char));
+  
+  strncpy(self->config, getenv("HOME"), n);
   
   if(getenv("XDG_CONFIG_HOME") != NULL ) {
-    strcpy(self->config, getenv("XDG_CONFIG_HOME"));
+    strncpy(self->config, getenv("XDG_CONFIG_HOME"), n);
     strcat(self->config, "/xchainkeys/xchainkeys.conf");
   } 
   else {
@@ -247,7 +248,7 @@ void xc_parse_config(XChainKeys_t *self) {
       line += 4;
       line += strspn(line, ws);
       line[strcspn(line, ws)] = '\0';
-      strncpy(font, line, strlen(line));
+      strncpy(font, line, 512);
       font[strlen(line)] = '\0';
       continue;
     }
@@ -256,7 +257,7 @@ void xc_parse_config(XChainKeys_t *self) {
       line += 10;
       line += strspn(line, ws);
       line[strcspn(line, ws)] = '\0';
-      strncpy(fg, line, strlen(line));
+      strncpy(fg, line, 64);
       fg[strlen(line)] = '\0';
       continue;
     }
@@ -265,7 +266,7 @@ void xc_parse_config(XChainKeys_t *self) {
       line += 10;
       line += strspn(line, ws);
       line[strcspn(line, ws)] = '\0';
-      strncpy(bg, line, strlen(line));
+      strncpy(bg, line, 64);
       bg[strlen(line)] = '\0';
       continue;
     }
@@ -342,8 +343,8 @@ void xc_parse_config(XChainKeys_t *self) {
 
       if (strcmp(expect, "argument") == 0) {
 	if(strlen(argument))
-	  strncat(argument, " ", 1);
-	strncat(argument, token, strlen(token));
+	  strcat(argument, " ");
+	strncat(argument, token, 4096-strlen(argument)-1);
 	goto next_token;
       }
 
@@ -365,7 +366,7 @@ void xc_parse_config(XChainKeys_t *self) {
 	  goto next_line;
 	}
         len = strcspn(argument, "\"");
-	strncpy(binding->name, argument, len);
+	strncpy(binding->name, argument, 128);
 	binding->name[len] = '\0';
 	argument += len + 1;
 	argument += strspn(argument, ws);
@@ -373,7 +374,7 @@ void xc_parse_config(XChainKeys_t *self) {
 
       /* append the argument to the current binding */
       if (strlen(argument)) {
-	strcpy(binding->argument, argument);
+	strncpy(binding->argument, argument, 4096);
       }
       argument = argument_ptr;
     }
@@ -525,7 +526,7 @@ void xc_parse_options(XChainKeys_t *self, int argc, char **argv) {
     switch (option) {
 
     case 'f':
-      strncpy(self->config, optarg, strlen(optarg));
+      strncpy(self->config, optarg, 4096);
       self->config[strlen(optarg)] = '\0';
       break;      
 

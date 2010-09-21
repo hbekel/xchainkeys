@@ -40,7 +40,7 @@ int key_parse_keyspec(Key_t *self, char *keyspec) {
   while( strstr(keyspec, "-") != NULL ) {
 
     len = strcspn(keyspec, "-");
-    strncpy(str, keyspec, len);
+    strncpy(str, keyspec, 256);
     str[len] = '\0';
     
     if(!key_add_modifier(self, str)) {

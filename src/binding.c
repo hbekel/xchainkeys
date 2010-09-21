@@ -74,7 +74,7 @@ void binding_parse_arguments(Binding_t *self) {
     argument = (char *) calloc(strlen(self->argument)+1, sizeof(char));
     argument_ptr = argument;
     
-    strncpy(argument, self->argument, strlen(self->argument));
+    strncpy(argument, self->argument, strlen(self->argument)+1);
     
     while(strlen(argument)) {
       
@@ -83,7 +83,7 @@ void binding_parse_arguments(Binding_t *self) {
 	value = (char *) calloc(strlen(argument)+1, sizeof(char));
 	value_ptr = value;
 	
-	strncpy(value, argument, strlen(argument));
+	strncpy(value, argument, strlen(argument)+1);
 	value += 8;
 	value[strcspn(value, ws)] = '\0';
 	
@@ -101,7 +101,7 @@ void binding_parse_arguments(Binding_t *self) {
 	value = (char *) calloc(strlen(argument)+1, sizeof(char));
 	value_ptr = value;
 	
-	strncpy(value, argument, strlen(argument));
+	strncpy(value, argument, strlen(argument)+1);
 	value += 6;
 	value[strcspn(value, ws)] = '\0';
 	
@@ -221,7 +221,7 @@ void binding_activate(Binding_t *self) {
 
   case XC_ACTION_LOAD:
     if(strlen(self->argument))
-      strcpy(xc->config, self->argument);
+      strncpy(xc->config, self->argument, strlen(self->argument)+1);
     xc->reload = True;
     break;
   }
@@ -456,7 +456,7 @@ char *binding_to_path(Binding_t *self) {
   do {
     keystr = key_to_str(binding->key);
     if(strlen(path) > 0)
-      strncat(keystr, " ", 1);
+      strcat(keystr, " ");
 
     memmove(path+strlen(keystr), path, strlen(path));
     memmove(path, keystr, strlen(keystr));
