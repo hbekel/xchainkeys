@@ -39,7 +39,7 @@ Binding_t* binding_new() {
 
 void binding_set_action(Binding_t *self, char *str) {
   int i;
-  for( i=0; i<xc->num_actions; i++) {
+  for( i=0; i<XC_NUM_ACTIONS; i++) {
     if(strncmp(xc->action_names[i], str, strlen(str)) == 0) {
       self->action = i;
       break;
