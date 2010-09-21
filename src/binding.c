@@ -321,6 +321,10 @@ void binding_enter(Binding_t *self) {
 	  /* done, exit this keymap unless manual abort was requested */
 	  if (self->abort == XC_ABORT_AUTO)
 	    done = True;
+
+	  /* always exit if the prefix key was escaped */
+	  if (binding != NULL && binding->action == XC_ACTION_ESCAPE)
+	    done = True;
 	  
 	  free(key);
 	}
@@ -399,7 +403,9 @@ void binding_group(Binding_t *self) {
 	       key_equals(binding->key, key) ) {
 
 	    binding_exec(binding);
-	    abort = False;
+	    
+	    if(binding->action != XC_ACTION_ESCAPE)
+	      abort = False;
 	    break;
 	  }
 	  abort = True;
