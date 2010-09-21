@@ -68,55 +68,59 @@ void binding_parse_arguments(Binding_t *self) {
   int i;
   
   if(self->action == XC_ACTION_ENTER) {
-  
-    /* initially set the timeout from the (now parsed) global timeout */
+    
     self->timeout = xc->timeout;
-  
+    
     argument = (char *) calloc(strlen(self->argument)+1, sizeof(char));
     argument_ptr = argument;
-
+    
     strncpy(argument, self->argument, strlen(self->argument));
-
+    
     while(strlen(argument)) {
-
+      
       if(strncmp(argument, "timeout=", 8) == 0) {
-
+	
 	value = (char *) calloc(strlen(argument)+1, sizeof(char));
 	value_ptr = value;
-
+	
 	strncpy(value, argument, strlen(argument));
 	value += 8;
 	value[strcspn(value, ws)] = '\0';
 	
 	self->timeout = atoi(value);
-
+	
 	argument += 8 + strlen(value);
 	argument += strspn(argument, ws);
-
+	
 	free(value_ptr);
+	continue;
       }
-
+      
       if(strncmp(argument, "abort=", 6) == 0) {
-
+	
 	value = (char *) calloc(strlen(argument)+1, sizeof(char));
 	value_ptr = value;
-
+	
 	strncpy(value, argument, strlen(argument));
 	value += 6;
 	value[strcspn(value, ws)] = '\0';
 	
 	if(strcmp(value, "auto") == 0) 
 	  self->abort = XC_ABORT_AUTO;
-
+	
 	if(strcmp(value, "manual") == 0)
 	  self->abort = XC_ABORT_MANUAL;
-
+	
 	argument += 6 + strlen(value);
 	argument += strspn(argument, ws);
-
+	
 	free(value_ptr);
+	continue;
       }
-
+      /* skip unparsed words */
+      argument += strcspn(argument, ws);      
+      argument += strspn(argument, ws);      
+      
       if(strcspn(argument, ws) == 0)
 	break;
     }

@@ -165,6 +165,7 @@ void xc_parse_config(XChainKeys_t *self) {
   FILE *f;
   char *buffer = (char *) calloc(4096, sizeof(char));
   char *argument= (char *) calloc(4096, sizeof(char));
+  char *argument_ptr = argument;
   char *line, *token, *expect, *path;
   const char *ws = " \t"; 
   int linenum = 0;
@@ -212,7 +213,7 @@ void xc_parse_config(XChainKeys_t *self) {
     /* discard newline at end of string */
     if( line[strlen(line)-1] == '\n' )
       line[strlen(line)-1] = '\0';
-    
+
     /* parse options */
     if( strncmp(line, "timeout", 7) == 0 ) {
       line += 7;
@@ -336,23 +337,8 @@ void xc_parse_config(XChainKeys_t *self) {
       
       if (strcmp(expect, "action") == 0) {
 	binding_set_action(binding, token);
-	expect = "name";
+	expect = "argument";
 	goto next_token;
-      }
-
-      if (strcmp(expect, "name") == 0) {
-	if( token[0] == '"' && token[strlen(token)-1] == '"' ) {
-	  token += 1; 
-	  token[strlen(token)-1] = '\0';
-
-	  strcpy(binding->name, token);
-	  token -= 1;
-	  expect = "argument";
-	  goto next_token;
-	}
-	else {
-	  expect = "argument";
-	}
       }
 
       if (strcmp(expect, "argument") == 0) {
@@ -369,16 +355,34 @@ void xc_parse_config(XChainKeys_t *self) {
     /* all tokens parsed */
     
     if (binding != NULL) {
+      
+      /* parse the name portion of the argument */
+      if(argument[0] == '"') {
+	argument += 1;
+	if(strrchr(argument, '"') == NULL) {
+	  fprintf(stderr, 
+		  "%s: warning: line %d: missing closing double quote for action name, ignoring arguments...\n",
+		  PACKAGE_NAME, linenum);
+	  goto next_line;
+	}
+        len = strcspn(argument, "\"");
+	strncpy(binding->name, argument, len);
+	binding->name[len] = '\0';
+	argument += len + 1;
+	argument += strspn(argument, ws);
+      }
+
       /* append the argument to the current binding */
       if (strlen(argument)) {
 	strcpy(binding->argument, argument);
       }
+      argument = argument_ptr;
     }
   next_line:
     ;
   }
   fclose(f);
-
+  
   binding_parse_arguments(self->root);
   binding_create_default_bindings(self->root);
 
