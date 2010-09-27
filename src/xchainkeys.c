@@ -302,7 +302,7 @@ void xc_parse_config(XChainKeys_t *self) {
 	  if( existing != NULL) {
 	    if(line[0] == ':' || line[0] == '\0') {
 	      path = binding_to_path(existing);
-	      fprintf(stderr, "%s: warning: line %d: %s: already bound, skipping...\n",
+	      fprintf(stderr, "%s: warning: line %d: '%s': already bound, skipping...\n",
 		      PACKAGE_NAME, linenum, path);
 	      free(path);
 	      free(key);
@@ -328,7 +328,7 @@ void xc_parse_config(XChainKeys_t *self) {
 	}
 	else {
 	  fprintf(stderr,
-		  "%s: warning: line %d: %s: invalid keyspec, skipping...\n",
+		  "%s: warning: line %d: '%s': invalid keyspec, skipping...\n",
 		  PACKAGE_NAME, linenum, token);
 	  free(token);
 	  goto next_line;
@@ -361,7 +361,8 @@ void xc_parse_config(XChainKeys_t *self) {
 	argument += 1;
 	if(strrchr(argument, '"') == NULL) {
 	  fprintf(stderr, 
-		  "%s: warning: line %d: missing closing double quote for action name, ignoring arguments...\n",
+		  "%s: warning: line %d: missing closing double quote "
+		  "for action name, ignoring arguments...\n",
 		  PACKAGE_NAME, linenum);
 	  goto next_line;
 	}
