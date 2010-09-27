@@ -1,3 +1,14 @@
+2010-09-27  Henning Bekel  <h.bekel@googlemail.com>
+
+	* Released version 0.5
+	* Added display of action names in feedback window
+	* Added improved error reporting during parsing
+	* Fixed spaces in action names were not possible
+	* Fixed :abort, :escape, :group were allowed as toplevel bindings
+	* Fixed :escape did not imply :abort as documented
+	* Fixed parsing failed with unknown words in :enter arguments
+	* Code cleanups
+
 2010-09-20  Henning Bekel  <h.bekel@googlemail.com>
 
 	* Released version 0.4

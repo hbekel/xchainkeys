@@ -2,8 +2,8 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.65])
-AC_INIT([xchainkeys], [0.4], [h.bekel@googlemail.com], [], [http://code.google.com/p/xchainkeys])
-AM_INIT_AUTOMAKE([xchainkeys], [0.4])
+AC_INIT([xchainkeys], [0.5], [h.bekel@googlemail.com], [], [http://code.google.com/p/xchainkeys])
+AM_INIT_AUTOMAKE([xchainkeys], [0.5])
 
 # Checks for programs.
 AC_PROG_CC
