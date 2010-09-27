@@ -245,7 +245,7 @@ void binding_enter(Binding_t *self) {
   timeout = get_msec() + self->timeout;
 
   /* prepare popup */
-  snprintf(xc->popup->text, strlen(path)+1, "%s", path);
+  strncpy(xc->popup->text, path, 4096);
 
   if(xc->popup->mapped)
     popup_show(xc->popup);
@@ -309,7 +309,7 @@ void binding_enter(Binding_t *self) {
 	  }
 	  else {
 	    keyspec = key_to_str(key);
-	    sprintf(xc->popup->text, "%s %s : no binding", path, keyspec);
+	    sprintf(xc->popup->text, "%s %s: no binding", path, keyspec);
 	    popup_show(xc->popup);
 	    popup_set_timeout(xc->popup, xc->delay);
 
@@ -369,7 +369,11 @@ void binding_group(Binding_t *self) {
   char *keystr;
   int i;
   int abort = False;
-  
+
+  char *path = binding_to_path(self);
+  strncpy(xc->popup->text, path, 4096);
+  free(path);
+
   popup_show(xc->popup);
   binding_exec(self);
 
@@ -452,17 +456,25 @@ void binding_exec(Binding_t *self) {
 char *binding_to_path(Binding_t *self) {
   Binding_t *binding = self;
   char *path = (char *) calloc(4096, sizeof(char));
-  char *keystr;
+  char *str;
   do {
-    keystr = key_to_str(binding->key);
+    if(strcmp(binding->name, "default") == 0) {
+      str = key_to_str(binding->key);
+    }
+    else {
+      str = binding->name;
+    }
+
     if(strlen(path) > 0)
-      strcat(keystr, " ");
+      strcat(str, " ");
 
-    memmove(path+strlen(keystr), path, strlen(path));
-    memmove(path, keystr, strlen(keystr));
+    memmove(path+strlen(str), path, strlen(path));
+    memmove(path, str, strlen(str));
+
+    if(strcmp(binding->name, "default") == 0) {
+      free(str);
+    }
     
-    free(keystr);
-
     binding = binding->parent;
   } while(binding->parent != NULL);
   return path;

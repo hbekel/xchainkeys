@@ -71,9 +71,6 @@ followed by a symbolic \fBkey name\fP, each separated by a hyphen
 
     \fI<mod>\fP-\fB[\fP\fI<mod>\fP-\fB...]\fP\fI<keyname>\fP
 
-(You can use \fBxchainkeys -k\fP to find the proper \fIkeyspec\fP for
-key combinations.)
-
 Modifier names include the following single upper-case characters:
 
 .RS	
@@ -90,6 +87,9 @@ recognized in addition to the above.
 Key names correspond to the symbolic key names defined in
 \fI/usr/include/X11/keysymdef.h\fP (with their \fIXK_\fP prefix
 removed).
+
+You can use \fBxchainkeys -k\fP to find the proper \fIkeyspec\fP for
+key combinations.
 .SS Actions
 
 .IP \fB:enter\fP\ [\fBtimeout=\fP\fI<n>\fP]\ [\fBabort=\fP\fI<auto|manual>\fP]
