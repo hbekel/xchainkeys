@@ -52,7 +52,7 @@ void binding_set_action(Binding_t *self, char *str) {
     self->action = XC_ACTION_GROUP;
     self->name = "default";
     fprintf(stderr, 
-	    "%s: warning: ':repeat' is deprecated, using ':group \"default\"' instead.\n",
+	    "%s: ':repeat' is deprecated, using ':group \"default\"' instead.\n",
 	    PACKAGE_NAME);
   }
 }
@@ -458,25 +458,26 @@ char *binding_to_path(Binding_t *self) {
   char *path = (char *) calloc(4096, sizeof(char));
   char *str;
   do {
-    if(strcmp(binding->name, "default") == 0) {
-      str = key_to_str(binding->key);
-    }
-    else {
-      str = binding->name;
+    str = key_to_str(binding->key);
+
+    if(strcmp(binding->name, "default") != 0) {
+      strncat(str, " (", 256-strlen(str));
+      strncat(str, binding->name, 256-strlen(str));
+      strncat(str, ")", 256-strlen(str));
     }
 
     if(strlen(path) > 0)
-      strcat(str, " ");
+      strncat(str, " ", 256-strlen(str));
 
     memmove(path+strlen(str), path, strlen(path));
     memmove(path, str, strlen(str));
 
-    if(strcmp(binding->name, "default") == 0) {
-      free(str);
-    }
+    free(str);
     
     binding = binding->parent;
+
   } while(binding->parent != NULL);
+
   return path;
 }
 
