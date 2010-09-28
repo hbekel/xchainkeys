@@ -326,6 +326,7 @@ void xc_parse_config(XChainKeys_t *self) {
 		      "action is invalid outside of chain, skipping...\n",
 		      PACKAGE_NAME, linenum, line); 
 	      free(key);
+	      free(token);
 	      goto next_line;
 	    }
 	  }
