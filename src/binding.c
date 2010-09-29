@@ -369,8 +369,13 @@ void binding_group(Binding_t *self) {
   char *keystr;
   int i;
   int abort = False;
-
-  char *path = binding_to_path(self);
+  char *path;
+  
+  path = binding_to_path(self->parent);
+  strncat(path, " (", 4096-strlen(path)-1);
+  strncat(path, self->name, 4096-strlen(path)-1);
+  strncat(path, ")", 4096-strlen(path)-1);
+  
   strncpy(xc->popup->text, path, 4096);
   free(path);
 
