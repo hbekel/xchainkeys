@@ -45,8 +45,11 @@ XChainKeys_t* xc_new() {
   XChainKeys_t *self = (XChainKeys_t *) calloc(1, sizeof(XChainKeys_t)); 
 
   if(NULL == (self->display=XOpenDisplay(NULL))) {
+    
     fprintf(stderr, "%s: error: XOpenDisplay() failed for DISPLAY=%s.\n", 
-	    PACKAGE_NAME, getenv("DISPLAY"));
+	    PACKAGE_NAME, getenv("DISPLAY")); 
+    fflush(stderr);
+    
     free(self);
     exit(EXIT_FAILURE);
   }
@@ -113,7 +116,8 @@ void xc_show_keys(XChainKeys_t *self) {
   version();
   printf("\nPress a key combination to show the corresponding keyspec.\n");
   printf("Press Control-c to quit.\n\n");
-  
+  fflush(stdout);
+
   XGrabKeyboard(self->display, DefaultRootWindow(self->display),
 		True, GrabModeAsync, GrabModeAsync, CurrentTime);
 
@@ -137,7 +141,10 @@ void xc_show_keys(XChainKeys_t *self) {
       key->modifiers = get_modifiers(self->display);
       
       keyspec = key_to_str(key);
+
       printf("%s\n", keyspec);
+      fflush(stdout);
+
       free(keyspec);
       free(key);
     }
@@ -193,10 +200,14 @@ void xc_parse_config(XChainKeys_t *self) {
   if(f == NULL) {
     fprintf(stderr, "%s: error: '%s': %s\n", 
 	    PACKAGE_NAME, self->config, strerror(errno));
+    fflush(stderr);
     exit(EXIT_FAILURE);
   }
 
-  if (self->debug) printf("Parsing config file %s\n", self->config);
+  if (self->debug) { 
+    printf("Parsing config file %s\n", self->config);
+    fflush(stdout);
+  }
 
   /* parse file */
   while(fgets(buffer, 4096, f) != NULL) {
@@ -304,6 +315,7 @@ void xc_parse_config(XChainKeys_t *self) {
 	      path = binding_to_path(existing);
 	      fprintf(stderr, "%s: line %d: '%s': already bound, skipping...\n",
 		      PACKAGE_NAME, linenum, path);
+	      fflush(stderr);
 	      free(path);
 	      free(key);
 	      free(token);
@@ -325,6 +337,7 @@ void xc_parse_config(XChainKeys_t *self) {
 	      fprintf(stderr, "%s: line %d: '%s': " 
 		      "action is invalid outside of chain, skipping...\n",
 		      PACKAGE_NAME, linenum, line); 
+	      fflush(stderr);
 	      free(key);
 	      free(token);
 	      goto next_line;
@@ -345,6 +358,7 @@ void xc_parse_config(XChainKeys_t *self) {
 	  fprintf(stderr,
 		  "%s: line %d: '%s': invalid keyspec, skipping...\n",
 		  PACKAGE_NAME, linenum, token);
+	  fflush(stderr);
 	  free(token);
 	  goto next_line;
 	}
@@ -379,6 +393,7 @@ void xc_parse_config(XChainKeys_t *self) {
 		  "%s: line %d: missing closing double quote "
 		  "for action name, ignoring arguments...\n",
 		  PACKAGE_NAME, linenum);
+	  fflush(stderr);
 	  goto next_line;
 	}
         len = strcspn(argument, "\"");
@@ -423,6 +438,7 @@ void xc_parse_config(XChainKeys_t *self) {
     
     binding_list(self->root);
     printf("\n");
+    fflush(stdout);
   }
   free(buffer);
   free(argument);
@@ -553,7 +569,7 @@ void xc_parse_options(XChainKeys_t *self, int argc, char **argv) {
     case 'd':
       self->debug = True;
       version();
-      printf("\n");
+      printf("\n"); fflush(stdout);
       break;
       
     case 'h':

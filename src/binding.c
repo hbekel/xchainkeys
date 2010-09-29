@@ -54,6 +54,7 @@ void binding_set_action(Binding_t *self, char *str) {
     fprintf(stderr, 
 	    "%s: ':repeat' is deprecated, using ':group \"default\"' instead.\n",
 	    PACKAGE_NAME);
+    fflush(stderr);
   }
 }
 
@@ -197,10 +198,12 @@ void binding_activate(Binding_t *self) {
   char *path;
   path = binding_to_path(self);
 
-  if (xc->debug) 
+  if (xc->debug) {
     printf(" -> %s %s %s\n", 
-	    path, xc->action_names[self->action], self->argument);
-
+	   path, xc->action_names[self->action], self->argument);
+    fflush(stdout);
+  }
+  
   switch(self->action) {
 
   case XC_ACTION_ENTER:
@@ -267,7 +270,7 @@ void binding_enter(Binding_t *self) {
     if(self->timeout > 0) {
       
       if(now >= timeout && self->timeout > 0) {
-	if (xc->debug) printf("Timed out\n");
+	if (xc->debug) { printf("Timed out\n"); fflush(stdout); }
 	done = True;
 	continue;
       }
@@ -298,7 +301,7 @@ void binding_enter(Binding_t *self) {
 	    
 	    /* :abort from here... */
 	    if (binding->action == XC_ACTION_ABORT) {
-	      if (xc->debug) printf("Aborted\n");
+	      if (xc->debug) { printf("Aborted\n"); fflush(stdout); }
 	      done = True;
 	      free(key);
 	      continue;
@@ -313,8 +316,10 @@ void binding_enter(Binding_t *self) {
 	    popup_show(xc->popup);
 	    popup_set_timeout(xc->popup, xc->delay);
 
-	    if (xc->debug) 
+	    if (xc->debug) {
 	      printf(" -> %s %s: no binding\n", path, keyspec);
+	      fflush(stdout);
+	    }
 	    free(keyspec);
 	  }	
 
@@ -509,7 +514,7 @@ void binding_list(Binding_t *self) {
     else 
       printf("%s %s \"%s\" %s\n", 
 	     keyspec, xc->action_names[self->action], self->name, self->argument);
-
+    fflush(stdout);
     free(keyspec);
   }
 

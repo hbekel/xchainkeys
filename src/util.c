@@ -16,6 +16,7 @@ void version() {
   printf("License GPLv3: GNU GPL version 3 <http://gnu.org/licenses/gpl.html>\n\n");
   printf("This is free software; you are free to change and redistribute it.\n");
   printf("There is NO WARRANTY, to the extent permitted by law.\n");
+  fflush(stdout);
 }
 
 void usage() {
@@ -28,6 +29,7 @@ void usage() {
   printf("  -h, --help    : Print this help text\n");
   printf("  -v, --version : Print version information\n");
   printf("\n");
+  fflush(stdout);
 }
 
 unsigned int modname_to_modifier(char *str) {
@@ -111,6 +113,7 @@ void send_key(Display *display, Key_t *key, Window window) {
     keyspec = key_to_str(key);
       printf("Sending synthetic KeyPressEvent (%s) to window id %d\n", 
 	      keyspec, (int)window);
+      fflush(stdout);
     free(keyspec);
   }
 
