@@ -31,6 +31,7 @@ typedef struct XChainKeys {
 XChainKeys_t* xc_new(void);
 void xc_parse_options(XChainKeys_t *self, int argc, char **argv);
 void xc_init_modmask(XChainKeys_t *self);
+int xc_handle_error(Display *display, XErrorEvent *event);
 void xc_show_keys(XChainKeys_t *self);
 void xc_find_config(XChainKeys_t *self);
 void xc_parse_config(XChainKeys_t *self);

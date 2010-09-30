@@ -54,6 +54,8 @@ XChainKeys_t* xc_new() {
     exit(EXIT_FAILURE);
   }
 
+  XSetErrorHandler(xc_handle_error);
+
   self->debug = False;
   self->timeout = 3000;
   self->delay = 1000;
@@ -103,6 +105,19 @@ void xc_init_modmask(XChainKeys_t *self) {
   self->modmask[5] = num | scroll;
   self->modmask[6] = caps | scroll;
   self->modmask[7] = num | caps | scroll;
+}
+
+int xc_handle_error(Display *display, XErrorEvent *event ) {
+  char error[1024];
+  XGetErrorText( display, event->error_code, error, sizeof(error));
+  fprintf(stderr, "error: (X) %s\n", error);
+  
+  if (event->error_code == BadAccess && event->request_code == 33) {
+    fprintf(stderr, "A key is already grabbed by another application " 
+	    "(most likely your wm/DE).\n");
+  }
+  fflush(stderr);   
+  exit(EXIT_FAILURE);
 }
 
 void xc_show_keys(XChainKeys_t *self) {
