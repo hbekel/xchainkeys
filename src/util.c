@@ -122,7 +122,7 @@ void send_key(Display *display, Key_t *key, Window window) {
   e.subwindow = None;
   e.time = CurrentTime;
   e.same_screen = True;	   
-  e.keycode = key->keycode;
+  e.keycode = key_get_keycode(key);
   e.state = key->modifiers;
   e.type = KeyPress;
   e.x = e.y = e.x_root = e.y_root = 1;

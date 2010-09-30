@@ -3,13 +3,13 @@
 
 typedef struct Key {
   unsigned int modifiers;
-  KeyCode keycode;
+  KeySym keysym;
 } Key_t;
 
 Key_t* key_new(char *keyspec);
 int key_parse_keyspec(Key_t *key, char *keyspec);
 int key_add_modifier(Key_t *self, char *str);
-int key_set_keycode(Key_t *self, char *str);
+int key_get_keycode(Key_t *self);
 int key_equals(Key_t *self, Key_t *key);
 void key_grab(Key_t *self);
 void key_ungrab(Key_t *self);

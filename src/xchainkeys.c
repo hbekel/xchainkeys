@@ -487,7 +487,7 @@ void xc_mainloop(XChainKeys_t *self) {
       for( i=0; i<self->root->num_children; i++ ) {
 	binding = self->root->children[i];
 	
-	if (binding->key->keycode == keycode) {
+	if (key_get_keycode(binding->key) == keycode) {
 	  if(binding->key->modifiers == get_modifiers(xc->display)) {
 
 	    popup_hide(xc->popup);

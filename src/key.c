@@ -31,7 +31,8 @@ int key_parse_keyspec(Key_t *self, char *keyspec) {
 
   char str[256];
   char *original_keyspec = strdup(keyspec);
-  int len, ret;
+  int len;
+  int ret = True;
 
   if (keyspec[0] == ':')
     return 0;
@@ -51,10 +52,14 @@ int key_parse_keyspec(Key_t *self, char *keyspec) {
   }
   
   /* keyspec now contains the keysym string */
-  ret = key_set_keycode(self, keyspec);
+  if(XStringToKeysym(keyspec) != NoSymbol) {
+    self->keysym = XStringToKeysym(keyspec);
+  }
+  else {
+    ret = False;
+  }
   
   free(original_keyspec);
-
   return ret;
 }
 
@@ -69,20 +74,13 @@ int key_add_modifier(Key_t *self, char *str) {
   return True;
 }
 
-int key_set_keycode(Key_t *self, char *str) {
-  KeySym keysym;
-
-  keysym = XStringToKeysym(str);
-  if( keysym == NoSymbol ) {
-    return 0;
-  }
-  self->keycode = XKeysymToKeycode(xc->display, keysym);
-  return 1;
+int key_get_keycode(Key_t *self) {
+  return XKeysymToKeycode(xc->display, self->keysym);
 }
 
 int key_equals(Key_t *self, Key_t *key) {
   if(self->modifiers == key->modifiers &&
-     self->keycode == key->keycode)
+     key_get_keycode(self) == key_get_keycode(key))
     return 1;
   return 0;
 }
@@ -91,7 +89,7 @@ void key_grab(Key_t *self) {
   int i;
 
   for( i=0; i<8; i++ ) {
-    XGrabKey(xc->display, self->keycode, self->modifiers | xc->modmask[i], 
+    XGrabKey(xc->display, key_get_keycode(self), self->modifiers | xc->modmask[i], 
 	     DefaultRootWindow(xc->display), False,
 	     GrabModeAsync, GrabModeAsync);
   }
@@ -101,7 +99,7 @@ void key_ungrab(Key_t *self) {
   int i;
 
   for( i=0; i<8; i++ ) {
-    XUngrabKey(xc->display, self->keycode, self->modifiers | xc->modmask[i], 
+    XUngrabKey(xc->display, key_get_keycode(self), self->modifiers | xc->modmask[i], 
 	       DefaultRootWindow(xc->display));
   }
 }
@@ -119,7 +117,7 @@ char *key_to_str(Key_t *self) {
   if (self->modifiers & Mod5Mask)    strcat(str, "mod5-");
   if (self->modifiers & ShiftMask)   strcat(str, "S-");
 
-  strcat(str, XKeysymToString(XKeycodeToKeysym(xc->display, self->keycode, 0)));
+  strcat(str, XKeysymToString(self->keysym));
 
   return str;	 
 }
