@@ -436,6 +436,7 @@ void xc_parse_config(XChainKeys_t *self) {
   self->popup = popup_new(self->display, font, fg, bg);
   self->popup->enabled = feedback;
 
+  /* display settings and chains on stdout */
   if (self->debug) {
     printf("\n");
     printf("timeout %d\n", self->timeout);

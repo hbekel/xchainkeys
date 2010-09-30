@@ -137,6 +137,7 @@ void binding_parse_arguments(Binding_t *self) {
 void binding_create_default_bindings(Binding_t *self) {
 
   Binding_t *binding;
+  Key_t *key;
   char *keyspec;
   int i;
 
@@ -144,22 +145,54 @@ void binding_create_default_bindings(Binding_t *self) {
 
     /* create default :escape binding unless present */
     if (!binding_get_child_by_action(self, XC_ACTION_ESCAPE)) {
-      binding = binding_new();
-      binding->action = XC_ACTION_ESCAPE;
 
       keyspec = key_to_str(self->key);
-      binding->key = key_new(keyspec);
-      free(keyspec);
+      key = key_new(keyspec);
 
-      binding_append_child(self, binding);
+      if(!binding_get_child_by_key(self, key)) {
+	
+	binding = binding_new();
+	binding->key = key;
+	binding->action = XC_ACTION_ESCAPE;
+
+	binding_append_child(self, binding);
+      }
+      else {
+	fprintf(stderr, 
+		"%s: chain '%s': :escape action not found and '%s %s' "  
+		"already bound:\n" 
+		"%s: -> skipping creation of default :escape binding...\n",
+		PACKAGE_NAME, keyspec, keyspec, keyspec, PACKAGE_NAME);
+	fflush(stderr);
+	free(key);
+      }	
+      free(keyspec);
     }
     
     /* create default :abort binding unless present */
     if (!binding_get_child_by_action(self, XC_ACTION_ABORT)) {
-      binding = binding_new();
-      binding->action = XC_ACTION_ABORT;
-      binding->key = key_new("C-g");
-      binding_append_child(self, binding);
+      
+      keyspec = key_to_str(self->key);
+      key = key_new("C-g");
+
+      if(!binding_get_child_by_key(self, key)) {
+	
+	binding = binding_new();
+	binding->key = key;
+	binding->action = XC_ACTION_ABORT;
+
+	binding_append_child(self, binding);
+      }
+      else {
+	fprintf(stderr, 
+		"%s: chain '%s': :abort action not found and '%s C-g' "  
+		"already bound:\n" 
+		"%s: -> skipping creation of default :abort binding...\n",
+		PACKAGE_NAME, keyspec, keyspec, PACKAGE_NAME);
+	fflush(stderr);
+	free(key);
+      }
+      free(keyspec);
     }
   }
   
