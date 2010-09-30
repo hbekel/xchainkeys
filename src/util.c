@@ -34,16 +34,23 @@ void usage() {
 
 unsigned int modname_to_modifier(char *str) {
 
-  if( strcasecmp(str, "shift") == 0 || strcmp(str, "S") == 0)
+  if( strcasecmp(str, "shift") == 0 || 
+      strcmp(str, "S") == 0 )
     return ShiftMask;
 
   if( strcasecmp(str, "lock") == 0 )
     return LockMask;
 
-  if( strcasecmp(str, "control") == 0 || strcmp(str, "C") == 0)
+  if( strcasecmp(str, "control") == 0 || 
+      strcasecmp(str, "ctrl") == 0 ||
+      strcmp(str, "C") == 0)
     return ControlMask;
 
-  if( strcasecmp(str, "mod1") == 0 || strcmp(str, "A") == 0 || strcmp(str, "M") == 0 )
+  if( strcasecmp(str, "mod1") == 0 || 
+      strcasecmp(str, "alt") == 0 || 
+      strcasecmp(str, "meta") == 0 || 
+      strcmp(str, "A") == 0 || 
+      strcmp(str, "M") == 0 )
     return Mod1Mask;
 
   if( strcasecmp(str, "mod2") == 0 )
@@ -52,7 +59,12 @@ unsigned int modname_to_modifier(char *str) {
   if( strcasecmp(str, "mod3") == 0 )
     return Mod3Mask;
 
-  if( strcasecmp(str, "mod4") == 0 || strcmp(str, "W") == 0 || strcmp(str, "H") == 0 )
+  if( strcasecmp(str, "mod4") == 0 || 
+      strcasecmp(str, "super") == 0 ||
+      strncasecmp(str, "win", 3) == 0 ||
+      strcasecmp(str, "hyper") == 0 ||
+      strcmp(str, "W") == 0 || 
+      strcmp(str, "H") == 0 )
     return Mod4Mask;
 
   if( strcasecmp(str, "mod5") == 0 )
