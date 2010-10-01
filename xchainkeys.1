@@ -191,6 +191,15 @@ The benefit of using a named \fB:group\fP over a dedicated chain with
 another prefix key. Instead you can temporarily redefine an existing
 chain to contain only a specific subset of keys, behaving in the
 desired manner.
+.SH KNOWN ISSUES
+Some window managers assume that no other program has grabbed any
+global key combinations before them, and may fail with a fatal error
+when trying to grab a key that has already been grabbed as a prefix
+key by xchainkeys. This situation is likely to occur when xchainkeys
+is started from \fI~/.xinitrc\fP. 
+
+In general, binding the same key combinations in xchainkeys and other
+programs should be avoided.
 .SH BUGS
 This software is currently in beta state. Please file bugs on the
 googlecode issue tracker.

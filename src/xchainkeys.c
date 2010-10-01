@@ -479,9 +479,8 @@ void xc_mainloop(XChainKeys_t *self) {
   long now;
   int i;
 
-  xc_grab_prefix_keys(self);
-
   while(True) {
+    xc_grab_prefix_keys(self);
 
     while(!XPending(self->display)) {      
       if(xc->popup->timeout == 0)

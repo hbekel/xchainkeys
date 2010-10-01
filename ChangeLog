@@ -1,3 +1,14 @@
+2010-09-30  Henning Bekel  <h.bekel@googlemail.com>
+
+	* Released version 0.6
+	* Added improved feedback for named :group actions
+	* Added common modifier synonyms: Ctrl, Alt, Meta, Super, Windows
+	* Fixed bogus keys may have been bound on startup from xinit
+	* Fixed useless default actions were created when the default keys
+	        were already bound to different actions
+	* Fixed output streams were not properly flushed
+	* Fixed leaked some memory during parsing
+
 2010-09-27  Henning Bekel  <h.bekel@googlemail.com>
 
 	* Released version 0.5
