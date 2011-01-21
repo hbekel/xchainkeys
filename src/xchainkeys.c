@@ -65,6 +65,8 @@ XChainKeys_t* xc_new() {
   self->xmodmap = XGetModifierMapping(self->display);
   xc_init_modmask(self);
 
+  self->conn_fd = ConnectionNumber(self->display);
+
   self->action_names[0] = ":none";
   self->action_names[1] = ":enter";
   self->action_names[2] = ":escape";
@@ -476,24 +478,24 @@ void xc_mainloop(XChainKeys_t *self) {
   Binding_t *reentry;
   XEvent event;
   KeyCode keycode;
-  long now;
   int i;
 
   while(True) {
     xc_grab_prefix_keys(self);
 
-    while(!XPending(self->display)) {      
-      if(xc->popup->timeout == 0)
-	break;
-      
-      now = get_msec();
-      
-      if(now >= xc->popup->timeout) {
-	popup_hide(xc->popup);
-	xc->popup->timeout = 0;
-      }
+    if (xc->popup->timeout > 0) {
+        struct timeval tv;
+        fd_set in;
+        FD_ZERO(&in);
+        FD_SET(xc->conn_fd, &in);
+        tv.tv_sec = xc->popup->timeout / 1000;
+        tv.tv_usec = (xc->popup->timeout % 1000) * 1000;
+        if (!select(xc->conn_fd + 1, &in, 0, 0, &tv)) {
+            popup_hide(xc->popup);
+            xc->popup->timeout = 0;
+        }
     }
-    
+
     XNextEvent(self->display, &event);
 
     if (event.type == KeyPress) {

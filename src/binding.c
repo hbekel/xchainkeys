@@ -264,6 +264,60 @@ void binding_activate(Binding_t *self) {
   free(path);
 }
 
+#include <sys/select.h>
+int wait_event(void) {
+    struct timeval tv1, tv2, *delay_tv, *timeout_tv;
+    fd_set in;
+    int ignore_delay = False;
+
+    if (xc->delay > 0) {
+        if (xc->timeout > 0 && xc->delay > xc->timeout) {
+            ignore_delay = True;
+            delay_tv = NULL;
+        } else {
+            tv1.tv_sec = xc->delay / 1000;
+            tv1.tv_usec = (xc->delay % 1000) * 1000;
+            delay_tv = &tv1;
+        }
+    } else {
+        delay_tv = NULL;
+    }
+
+    if (xc->timeout > 0) {
+        if (ignore_delay) {
+            tv2.tv_sec = xc->timeout / 1000;
+            tv2.tv_usec = (xc->timeout % 1000) * 1000;
+        } else {
+            tv2.tv_sec = (xc->timeout - xc->delay) / 1000;
+            tv2.tv_usec = (xc->timeout - xc->delay) % 1000 * 1000;
+        }
+        timeout_tv = &tv2;
+    } else {
+        timeout_tv = NULL;
+    }
+
+
+
+    FD_ZERO(&in);
+    FD_SET(xc->conn_fd, &in);
+
+    if (ignore_delay) {
+        return select(xc->conn_fd + 1, &in, 0, 0, timeout_tv);
+    } else {
+        if (delay_tv
+            && select(xc->conn_fd + 1, &in, 0, 0, delay_tv)) {
+            return 1;
+        }
+
+        if(!xc->popup->mapped)
+            popup_show(xc->popup);
+
+        if (!FD_ISSET(xc->conn_fd, &in))
+            FD_SET(xc->conn_fd, &in);
+        return select(xc->conn_fd + 1, &in, 0, 0, timeout_tv);
+    }
+}
+
 void binding_enter(Binding_t *self) {
   XEvent event;
   KeyCode keycode;
@@ -272,13 +326,7 @@ void binding_enter(Binding_t *self) {
   char *keystr;
   char *keyspec;
   int done = False;
-  long now, timeout, delay;
   char *path = binding_to_path(self);
-
-  /* prepare timeout and popup delay */
-  now = get_msec();
-  delay = now + xc->delay;
-  timeout = get_msec() + self->timeout;
 
   /* prepare popup */
   strncpy(xc->popup->text, path, 4096);
@@ -293,21 +341,11 @@ void binding_enter(Binding_t *self) {
   }
 
   while(!done) {    
-    now = get_msec();
-
-    /* show popup after delay */
-    if(now >= delay && !xc->popup->mapped)
-      popup_show(xc->popup);
-
-    /* abort on timeout */
-    if(self->timeout > 0) {
-      
-      if(now >= timeout && self->timeout > 0) {
-	if (xc->debug) { printf("Timed out\n"); fflush(stdout); }
-	done = True;
-	continue;
+      if (!wait_event()) {
+          if (xc->debug) { printf("Timed out\n"); fflush(stdout); }
+          done = True;
+          continue;
       }
-    }
 
     /* look for key press events... */
     if(XPending(xc->display)) {
@@ -347,7 +385,7 @@ void binding_enter(Binding_t *self) {
 	    keyspec = key_to_str(key);
 	    sprintf(xc->popup->text, "%s %s: no binding", path, keyspec);
 	    popup_show(xc->popup);
-	    popup_set_timeout(xc->popup, xc->delay);
+	    xc->popup->timeout = xc->delay;
 
 	    if (xc->debug) {
 	      printf(" -> %s %s: no binding\n", path, keyspec);

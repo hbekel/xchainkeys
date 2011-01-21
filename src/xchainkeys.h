@@ -26,6 +26,7 @@ typedef struct XChainKeys {
   struct Popup *popup;
   struct Binding *root;
   struct Binding *reentry;
+  int conn_fd;
 } XChainKeys_t;
 
 XChainKeys_t* xc_new(void);
