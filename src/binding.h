@@ -21,6 +21,7 @@ void binding_create_default_bindings(Binding_t *self);
 void binding_append_child(Binding_t *self, Binding_t *child);
 Binding_t *binding_get_child_by_key(Binding_t *self, Key_t *key);
 Binding_t *binding_get_child_by_action(Binding_t *self, int action);
+int binding_wait_event(Binding_t *self);
 void binding_activate(Binding_t *self);
 void binding_enter(Binding_t *self);
 void binding_escape(Binding_t *self);

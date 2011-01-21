@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <sys/wait.h>
+#include <sys/select.h>
 #include <string.h>
 #include <X11/Xlib.h>
 
@@ -28,7 +29,7 @@ Binding_t* binding_new() {
 
   self->argument = calloc(4096, sizeof(char));
   
-  self->timeout = 3000;
+  self->timeout = 3000; 
   self->abort = XC_ABORT_AUTO;
 
   self->parent = NULL;
@@ -264,14 +265,13 @@ void binding_activate(Binding_t *self) {
   free(path);
 }
 
-#include <sys/select.h>
-int wait_event(void) {
+int binding_wait_event(Binding_t *self) {
     struct timeval tv1, tv2, *delay_tv, *timeout_tv;
     fd_set in;
     int ignore_delay = False;
 
     if (xc->delay > 0) {
-        if (xc->timeout > 0 && xc->delay > xc->timeout) {
+        if (self->timeout > 0 && xc->delay > self->timeout) {
             ignore_delay = True;
             delay_tv = NULL;
         } else {
@@ -283,20 +283,18 @@ int wait_event(void) {
         delay_tv = NULL;
     }
 
-    if (xc->timeout > 0) {
+    if (self->timeout > 0) {
         if (ignore_delay) {
-            tv2.tv_sec = xc->timeout / 1000;
-            tv2.tv_usec = (xc->timeout % 1000) * 1000;
+            tv2.tv_sec = self->timeout / 1000;
+            tv2.tv_usec = (self->timeout % 1000) * 1000;
         } else {
-            tv2.tv_sec = (xc->timeout - xc->delay) / 1000;
-            tv2.tv_usec = (xc->timeout - xc->delay) % 1000 * 1000;
+            tv2.tv_sec = (self->timeout - xc->delay) / 1000;
+            tv2.tv_usec = (self->timeout - xc->delay) % 1000 * 1000;
         }
         timeout_tv = &tv2;
     } else {
         timeout_tv = NULL;
     }
-
-
 
     FD_ZERO(&in);
     FD_SET(xc->conn_fd, &in);
@@ -341,7 +339,7 @@ void binding_enter(Binding_t *self) {
   }
 
   while(!done) {    
-      if (!wait_event()) {
+      if (!binding_wait_event(self)) {
           if (xc->debug) { printf("Timed out\n"); fflush(stdout); }
           done = True;
           continue;

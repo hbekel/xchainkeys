@@ -21,12 +21,12 @@ typedef struct XChainKeys {
   int debug;
   unsigned int timeout;
   unsigned int delay;
+  int conn_fd;
   char *config;
   int reload;
   struct Popup *popup;
   struct Binding *root;
   struct Binding *reentry;
-  int conn_fd;
 } XChainKeys_t;
 
 XChainKeys_t* xc_new(void);
