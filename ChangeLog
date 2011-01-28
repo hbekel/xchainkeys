@@ -1,3 +1,9 @@
+2011-01-28  Henning Bekel  <h.bekel@googlemail.com>
+
+	* Released version 0.7
+	* Applied a patch contributed by sssslang that avoids using 100%
+	  cpu time while waiting for a timeout to occur.
+
 2010-09-30  Henning Bekel  <h.bekel@googlemail.com>
 
 	* Released version 0.6

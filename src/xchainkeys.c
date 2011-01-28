@@ -1,6 +1,7 @@
 /* xchainkeys -- chained keybindings for X11
- * Copyright (C) 2010 Henning Bekel <h.bekel@googlemail.com>
- *
+ * Copyright (C) 2010, 2011 Henning Bekel <h.bekel@googlemail.com>
+ * Improved timeout code contributed by sssslang.
+ * 
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
  * published by the Free Software Foundation; either version 3 of the
