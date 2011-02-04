@@ -31,6 +31,7 @@
 #include <string.h>
 #include <errno.h>
 #include <getopt.h>
+#include <sys/time.h>
 #include <X11/Xlib.h>
 
 #include "key.h"
