@@ -18,6 +18,9 @@ Key_t* key_new(char *keyspec) {
 
   Key_t *self = (Key_t *) calloc(1, sizeof(Key_t));;
   
+  self->keysym = NoSymbol;
+  self->keycode = 0;
+
   if( key_parse_keyspec(self, keyspec) ) {
     return(self);
   }
@@ -51,12 +54,19 @@ int key_parse_keyspec(Key_t *self, char *keyspec) {
     keyspec += len + 1;
   }
   
-  /* keyspec now contains the keysym string */
-  if(XStringToKeysym(keyspec) != NoSymbol) {
-    self->keysym = XStringToKeysym(keyspec);
-  }
-  else {
-    ret = False;
+  /* keyspec now contains the valid keysym string or a numeric keycode */
+
+  /* parse as keysym string */
+  self->keysym = XStringToKeysym(keyspec);
+
+  if(self->keysym == NoSymbol) {
+ 
+    /* not a valid symbol, try to parse numeric keycode */
+    self->keycode = (unsigned int)strtol(keyspec, NULL, 0);
+
+    if(self->keycode < 8) { // not a valid xlib keycode
+      ret = False;
+    }
   }
   
   free(original_keyspec);
@@ -75,7 +85,10 @@ int key_add_modifier(Key_t *self, char *str) {
 }
 
 int key_get_keycode(Key_t *self) {
-  return XKeysymToKeycode(xc->display, self->keysym);
+  if(self->keysym != NoSymbol)
+    return XKeysymToKeycode(xc->display, self->keysym);
+  else
+    return self->keycode;
 }
 
 int key_equals(Key_t *self, Key_t *key) {
@@ -117,7 +130,10 @@ char *key_to_str(Key_t *self) {
   if (self->modifiers & Mod5Mask)    strcat(str, "mod5-");
   if (self->modifiers & ShiftMask)   strcat(str, "S-");
 
-  strcat(str, XKeysymToString(self->keysym));
+  if(self->keysym != NoSymbol)
+    strcat(str, XKeysymToString(self->keysym));
+  else
+    snprintf(str, 5, "0x%x", self->keycode);
 
   return str;	 
 }

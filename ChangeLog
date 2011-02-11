@@ -1,3 +1,9 @@
+2011-02-11  Henning Bekel  <h.bekel@googlemail.com>
+
+	* Released version 0.8
+	* Addded ability to also bind keys by specifying a numeric keycode
+	  instead of a keysym
+
 2011-01-28  Henning Bekel  <h.bekel@googlemail.com>
 
 	* Released version 0.7

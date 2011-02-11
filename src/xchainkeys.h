@@ -14,7 +14,7 @@
 #define XC_ABORT_MANUAL 0
 
 typedef struct XChainKeys {
-  Display *display;  
+  Display *display;
   XModifierKeymap *xmodmap;
   int modmask[8];
   char *action_names[XC_NUM_ACTIONS];

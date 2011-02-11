@@ -88,9 +88,13 @@ XChainKeys_t* xc_new() {
 void xc_init_modmask(XChainKeys_t *self) {
   unsigned int num, caps, scroll;
 
-  /* self->modmask contains all possible combinations of num, caps and
-   * scroll lock */
+  /* setup self->modmask to contain all possible combinations of num,
+   * caps and scroll lock modifiers. 
+   *
+   * Xchainkeys ignores these modifiers by default, e.g. each key will
+   * be bound to all possible combinations */
 
+  /* get the keycodes for num, caps and scroll lock */
   num = 
     keycode_to_modifier(self->xmodmap, 
 			XKeysymToKeycode(self->display, XStringToKeysym("Num_Lock")));
@@ -101,6 +105,7 @@ void xc_init_modmask(XChainKeys_t *self) {
     keycode_to_modifier(self->xmodmap, 
 			XKeysymToKeycode(self->display, XStringToKeysym("Scoll_Lock")));
 
+  /* populate modmask array with all possible combinations */
   self->modmask[0] = 0;
   self->modmask[1] = num;
   self->modmask[2] = caps;
@@ -112,6 +117,10 @@ void xc_init_modmask(XChainKeys_t *self) {
 }
 
 int xc_handle_error(Display *display, XErrorEvent *event ) {
+
+  /* Xlib error handler. Report the standard error text and exit.
+   * Hint if a key is already grabbed by another application */
+
   char error[1024];
   XGetErrorText( display, event->error_code, error, sizeof(error));
   fprintf(stderr, "error: (X) %s\n", error);
@@ -129,11 +138,16 @@ void xc_show_keys(XChainKeys_t *self) {
   XEvent event;
   Key_t *key;
   KeyCode keycode;
-  char *keystr;
-  char *keyspec;
+  KeySym keysym;
+  char *keystr = "";
+  char *keyspec = "";
 
-  version();
-  printf("\nPress a key combination to show the corresponding keyspec.\n");
+  if(!xc->debug) {
+    version();
+    printf("\n");
+  }
+
+  printf("Press a key combination to show the corresponding keyspec.\n");
   printf("Press Control-c to quit.\n\n");
   fflush(stdout);
 
@@ -141,24 +155,42 @@ void xc_show_keys(XChainKeys_t *self) {
 		True, GrabModeAsync, GrabModeAsync, CurrentTime);
 
   while(True) {
+    
+    /* block until an event occurs */
     XNextEvent(self->display, &event);
-    switch(event.type) {
-    case KeyPress:
+    
+    /* we're only interested in KeyPress events */
+    if (event.type == KeyPress) {
       
       keycode = ((XKeyPressedEvent*)&event)->keycode;
-      keystr = XKeysymToString(XKeycodeToKeysym(self->display, keycode, 0));
       
-      if (keycode_to_modifier(xc->xmodmap, keycode) != 0) 
+      /* skip modifier key press */
+      if(keycode_to_modifier(xc->xmodmap, keycode) != 0) 
 	continue;
+
+      keysym = XKeycodeToKeysym(self->display, keycode, 0);
       
-      if ( strcmp(keystr, "c") == 0 && get_modifiers(self->display) == ControlMask ) {
+      /* get a string from keysym or keycode */
+      if(keysym != NoSymbol)
+	keystr = XKeysymToString(keysym);
+      else
+	snprintf(keystr, 5, "0x%x", (int)keycode);
+
+      /* abort on Ctrl-c */
+      if (strcmp(keystr, "c") == 0 && 
+	  get_modifiers(self->display) == ControlMask ) {
+	
 	XUngrabKeyboard(self->display, CurrentTime);
 	return;
       }
       
-      key = key_new(keystr);      
+      /* create a key object from the key string and add the currently
+       * pressed modifiers */
+
+      key = key_new(keystr);
       key->modifiers = get_modifiers(self->display);
       
+      /* get the key specifier in Xchainkey format and print it */
       keyspec = key_to_str(key);
 
       printf("%s\n", keyspec);
@@ -172,6 +204,8 @@ void xc_show_keys(XChainKeys_t *self) {
 
 void xc_find_config(XChainKeys_t *self) {
   
+  /* find the config file while respecting XDG_CONFIG_HOME */
+
   int n = 4096;
   self->config = (char *) calloc(n, sizeof(char));
   
@@ -480,14 +514,15 @@ void xc_mainloop(XChainKeys_t *self) {
   Binding_t *reentry;
   XEvent event;
   KeyCode keycode;
+  struct timeval tv;
+  fd_set in;
   int i;
 
   while(True) {
     xc_grab_prefix_keys(self);
 
     if (xc->popup->timeout > 0) {
-        struct timeval tv;
-        fd_set in;
+
         FD_ZERO(&in);
         FD_SET(xc->conn_fd, &in);
         tv.tv_sec = xc->popup->timeout / 1000;

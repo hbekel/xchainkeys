@@ -4,6 +4,7 @@
 typedef struct Key {
   unsigned int modifiers;
   KeySym keysym;
+  unsigned int keycode;
 } Key_t;
 
 Key_t* key_new(char *keyspec);

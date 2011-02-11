@@ -66,10 +66,10 @@ Keybindings are defined using the following syntax:
     \fI<keyspec>\fP \fB[\fP\fI<keyspec>\fP\fB...]\fP :\fI<action>\fP \fB[\fP"\fI<name>\fP"\fB]\fP\ \fB[\fP\fI<arguments>\fP\fB...]\fP
 
 A \fIkeyspec\fP consists of one or more optional \fBmodifier names\fP,
-followed by a symbolic \fBkey name\fP, each separated by a hyphen
-(-):
+followed by either a symbolic \fBkey name\fP or a numeric keycode,
+each separated by a hyphen (-):
 
-    \fI<mod>\fP-\fB[\fP\fI<mod>\fP-\fB...]\fP\fI<keyname>\fP
+    \fI<mod>\fP-\fB[\fP\fI<mod>\fP-\fB...]\fP\fI<keyname|keycode>\fP
 
 Modifier names:
 
@@ -87,6 +87,9 @@ recognized in addition to the above.
 Key names correspond to the symbolic key names defined in
 \fI/usr/include/X11/keysymdef.h\fP (with their \fIXK_\fP prefix
 removed).
+
+Numeric keycodes may be supplied in decimal, hexadecimal or octal
+format, e.g. 16 (decimal) = 0x10 (hexadecimal) = 020 octal.
 
 You can use \fBxchainkeys -k\fP to find the proper \fIkeyspec\fP for
 key combinations.
@@ -209,7 +212,7 @@ http://code.google.com/p/xchainkeys/issues
 Use the email address below for questions, feature requests and
 comments.
 .SH COPYRIGHT
-Copyright (C) 2010 Henning Bekel <h.bekel@googlemail.com>
+Copyright (C) 2010, 2011 Henning Bekel <h.bekel@googlemail.com>
 .SH LICENSE
 xchainkeys is licensed under the GNU General Public License v3, see
 http://www.gnu.org/licenses/gpl.html.
