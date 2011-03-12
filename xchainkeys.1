@@ -41,7 +41,7 @@ whitespace.
 
 Wait \fIn\fP milliseconds for another key to be pressed before
 aborting an active keychain. A value of 0 will prevent automatic
-timeout. This value may be overriden by a \fBtimeout\fP argument
+timeout. This value may be overridden by a \fBtimeout\fP argument
 supplied to an \fB:enter\fP action, see \fBActions\fP below.
 .IP \fBfeedback\fP\ \fI<on|off>\fP\ (default:\ \fIon\fP)
 
@@ -126,9 +126,14 @@ This feature is implemented using \fBXSendEvent(3)\fP. Note that
 applications may refuse to accept synthetic events generated with
 \fBXSendEvent\fP.
 .IP \fB:exec\fP\ \fI<command>\fP
-Asynchroniously execute \fIcommand\fP as a shell command. 
+Asynchronously execute \fIcommand\fP as a shell command. 
+.IP \fB:wait\fP\ \fI<command>\fP
+Ungrab the keyboard, execute \fIcommand\fP as a shell command and wait
+until the \fIcommand\fP has completed. Use this action to run commands
+that need to grab the keyboard (e.g. for running \fIscrot\fP with the
+\fI--select\fP option).
 .IP \fB:group\fP\ \fB[\fP"\fI<name>\fP"\fB]\fP\ \fI<command>\fP
-Associate a binding with a named group and asynchroniously execute
+Associate a binding with a named group and asynchronously execute
 \fIcommand\fP as a shell command.
 
 When a \fB:group\fP action is activated, timeout and automatic abort

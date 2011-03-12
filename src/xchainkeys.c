@@ -76,6 +76,7 @@ XChainKeys_t* xc_new() {
   self->action_names[4] = ":exec";
   self->action_names[5] = ":group";
   self->action_names[6] = ":load";
+  self->action_names[7] = ":wait";
 
   self->root = binding_new();
   self->root->action = XC_ACTION_NONE;

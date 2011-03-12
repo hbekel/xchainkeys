@@ -27,6 +27,7 @@ void binding_enter(Binding_t *self);
 void binding_escape(Binding_t *self);
 void binding_send(Binding_t *self);
 void binding_exec(Binding_t *self);
+void binding_wait(Binding_t *self);
 void binding_group(Binding_t *self);
 char *binding_to_path(Binding_t *self);
 void binding_list(Binding_t *self);

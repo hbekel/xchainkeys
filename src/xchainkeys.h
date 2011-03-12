@@ -8,7 +8,8 @@
 #define XC_ACTION_EXEC     4
 #define XC_ACTION_GROUP    5
 #define XC_ACTION_LOAD     6
-#define XC_NUM_ACTIONS     7
+#define XC_ACTION_WAIT     7
+#define XC_NUM_ACTIONS     8
 
 #define XC_ABORT_AUTO 1
 #define XC_ABORT_MANUAL 0

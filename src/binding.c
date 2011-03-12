@@ -252,6 +252,10 @@ void binding_activate(Binding_t *self) {
     binding_exec(self);
     break;
 
+  case XC_ACTION_WAIT:    
+    binding_wait(self);
+    break;
+
   case XC_ACTION_GROUP:
     binding_group(self);
     break;
@@ -513,6 +517,19 @@ void binding_group(Binding_t *self) {
       }
     }
   }
+}
+
+void binding_wait(Binding_t *self) {
+  char *command = self->argument;
+
+  XUngrabKeyboard(xc->display, CurrentTime);
+  XFlush(xc->display);
+
+  system(command);
+
+  XGrabKeyboard(xc->display, DefaultRootWindow(xc->display),
+		  True, GrabModeAsync, GrabModeAsync, CurrentTime);
+  XFlush(xc->display);
 }
 
 void binding_exec(Binding_t *self) {
