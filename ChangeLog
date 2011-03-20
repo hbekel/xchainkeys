@@ -1,3 +1,9 @@
+2011-03-20  Henning Bekel  <h.bekel@googlemail.com>
+
+	* Released version 0.9.1
+	* Fixed a bug in :wait action that left the keyboard grabbed if
+	:wait was invoked from a toplevel key
+
 2011-03-12  Henning Bekel  <h.bekel@googlemail.com>
 
 	* Released version 0.9

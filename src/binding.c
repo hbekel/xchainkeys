@@ -527,8 +527,10 @@ void binding_wait(Binding_t *self) {
 
   system(command);
 
-  XGrabKeyboard(xc->display, DefaultRootWindow(xc->display),
+  if (self->parent != xc->root)
+    XGrabKeyboard(xc->display, DefaultRootWindow(xc->display),
 		  True, GrabModeAsync, GrabModeAsync, CurrentTime);
+
   XFlush(xc->display);
 }
 
