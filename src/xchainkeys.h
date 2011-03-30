@@ -22,7 +22,9 @@ typedef struct XChainKeys {
   int debug;
   unsigned int timeout;
   unsigned int delay;
-  int conn_fd;
+  unsigned int hold;
+  int connection;
+  char *position;
   char *config;
   int reload;
   struct Popup *popup;

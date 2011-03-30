@@ -37,27 +37,38 @@ ignored.
 .SS Global Settings
 Global settings are defined as key-value pairs, separated by
 whitespace.
-.IP \fBtimeout\fP\ \fI<n>\fP\ (default:\ \fI3000\fP)
+.IP \fBtimeout\fP\ \fI<n>\fP\ (default:\ \fB3000\fP)
 
 Wait \fIn\fP milliseconds for another key to be pressed before
 aborting an active keychain. A value of 0 will prevent automatic
 timeout. This value may be overridden by a \fBtimeout\fP argument
 supplied to an \fB:enter\fP action, see \fBActions\fP below.
-.IP \fBfeedback\fP\ \fI<on|off>\fP\ (default:\ \fIon\fP)
+.IP \fBfeedback\fP\ \fI<\fBon\fP|\fBoff\fP>\fP\ (default:\ \fBon\fP)
 
-Show feedback about the current chain position in a small popup window.
-.IP \fBdelay\fP\ \fI<n>\fP\ (default:\ \fI1000\fP)
-Delay in milliseconds before showing the feedback window . Also
-defines the amount of time to show the feedback window after the
-keychain has been completed or aborted, e.g. to display a warning
-message about an unbound key being pressed.
-.IP \fBfont\fP\ \fI<fontstring>\fP\ (default:\ \fIfixed\fP)
+Show feedback in a small popup window.
+.IP \fBdelay\fP\ \fI<n>\fP\ (default:\ \fB1000\fP)
+
+Show current chain status after \fIn\fP milliseconds of inactivity
+in an active chain.
+.IP \fBhold\fP\ \fI<n>\fP\ (default:\ \fI<delay>\fP)
+
+Show error messages for \fIn\fP milliseconds after a chain has been
+aborted. If not set, the value of \fBdelay\fP will be used.
+.IP \fBposition\fP\ \fI<x|offset|\fBmouse\fP|\fBcenter\fP>\ [\fI<y>\fP]\ (default:\ \fBcenter\fP)
+
+The position of the feedback window. An absolute position can be
+specified with the \fIx\fP and \fIy\fP arguments. A relative position
+can be specified using the offset portion of a standard X geometry
+string. The value \fBmouse\fP will cause the window to appear centered
+around the current mouse pointer position. The value \fBcenter\fP will
+center the window on the default screen.
+.IP \fBfont\fP\ \fI<fontstring>\fP\ (default:\ \fBfixed\fP)
 
 The X11 font to use for text in the feedback window.
-.IP \fBforeground\fP\ \fI<name|#rrggbb>\fP\ (default:\ \fIblack\fP)
+.IP \fBforeground\fP\ \fI<name|#rrggbb>\fP\ (default:\ \fBblack\fP)
 
 The foreground color of the text and the border of the feedback window.
-.IP \fBbackground\fP\ \fI<name|#rrggbb>\fP\ (default:\ \fIwhite\fP)
+.IP \fBbackground\fP\ \fI<name|#rrggbb>\fP\ (default:\ \fBwhite\fP)
 
 The background color of the feedback window.
 .SS Keybindings
@@ -128,10 +139,10 @@ applications may refuse to accept synthetic events generated with
 .IP \fB:exec\fP\ \fI<command>\fP
 Asynchronously execute \fIcommand\fP as a shell command. 
 .IP \fB:wait\fP\ \fI<command>\fP
-Ungrab the keyboard, execute \fIcommand\fP as a shell command and wait
-until the \fIcommand\fP has completed. Use this action to run commands
-that need to grab the keyboard (e.g. for running \fIscrot\fP with the
-\fI--select\fP option).
+Ungrab the keyboard, execute \fIcommand\fP as a shell command, wait
+until the \fIcommand\fP has completed and grab the keyboard again if
+necessary. Use this action to run commands that also grab the keyboard
+(e.g. \fIscrot --select\fP).
 .IP \fB:group\fP\ \fB[\fP"\fI<name>\fP"\fB]\fP\ \fI<command>\fP
 Associate a binding with a named group and asynchronously execute
 \fIcommand\fP as a shell command.
@@ -204,7 +215,7 @@ Some window managers assume that no other program has grabbed any
 global key combinations before them, and may fail with a fatal error
 when trying to grab a key that has already been grabbed as a prefix
 key by xchainkeys. This situation is likely to occur when xchainkeys
-is started from \fI~/.xinitrc\fP. 
+is started before the window manager in \fI~/.xinitrc\fP. 
 
 In general, binding the same key combinations in xchainkeys and other
 programs should be avoided.

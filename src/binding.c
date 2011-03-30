@@ -301,22 +301,22 @@ int binding_wait_event(Binding_t *self) {
     }
 
     FD_ZERO(&in);
-    FD_SET(xc->conn_fd, &in);
+    FD_SET(xc->connection, &in);
 
     if (ignore_delay) {
-        return select(xc->conn_fd + 1, &in, 0, 0, timeout_tv);
+        return select(xc->connection + 1, &in, 0, 0, timeout_tv);
     } else {
         if (delay_tv
-            && select(xc->conn_fd + 1, &in, 0, 0, delay_tv)) {
+            && select(xc->connection + 1, &in, 0, 0, delay_tv)) {
             return 1;
         }
 
         if(!xc->popup->mapped)
             popup_show(xc->popup);
 
-        if (!FD_ISSET(xc->conn_fd, &in))
-            FD_SET(xc->conn_fd, &in);
-        return select(xc->conn_fd + 1, &in, 0, 0, timeout_tv);
+        if (!FD_ISSET(xc->connection, &in))
+            FD_SET(xc->connection, &in);
+        return select(xc->connection + 1, &in, 0, 0, timeout_tv);
     }
 }
 
@@ -387,7 +387,7 @@ void binding_enter(Binding_t *self) {
 	    keyspec = key_to_str(key);
 	    sprintf(xc->popup->text, "%s %s: no binding", path, keyspec);
 	    popup_show(xc->popup);
-	    xc->popup->timeout = xc->delay;
+	    xc->popup->timeout = (xc->hold == -1) ? xc->delay : xc->hold;
 
 	    if (xc->debug) {
 	      printf(" -> %s %s: no binding\n", path, keyspec);

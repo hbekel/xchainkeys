@@ -1,3 +1,11 @@
+2011-03-28  Henning Bekel  <h.bekel@googlemail.com>
+
+	* Released version 0.10
+	* Added new options "position" and "hold" to control the
+	positioning of the feedback window and to set the duration of
+	error messages being displayed. Based on a patch from Lourens
+	Rozema.
+
 2011-03-20  Henning Bekel  <h.bekel@googlemail.com>
 
 	* Released version 0.9.1
@@ -9,7 +17,6 @@
 	* Released version 0.9
 	* Added new action :wait to execute commands synchronously while
 	releasing xchainkey's keyboard grab (requested by tum).
-
 
 2011-02-11  Henning Bekel  <h.bekel@googlemail.com>
 

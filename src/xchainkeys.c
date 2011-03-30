@@ -61,13 +61,15 @@ XChainKeys_t* xc_new() {
   self->debug = False;
   self->timeout = 3000;
   self->delay = 1000;
+  self->hold = -1;
+  self->position = "center";
   self->reentry = NULL;
   self->reload = False;
 
   self->xmodmap = XGetModifierMapping(self->display);
   xc_init_modmask(self);
 
-  self->conn_fd = ConnectionNumber(self->display);
+  self->connection = ConnectionNumber(self->display);
 
   self->action_names[0] = ":none";
   self->action_names[1] = ":enter";
@@ -288,6 +290,19 @@ void xc_parse_config(XChainKeys_t *self) {
       continue;
     }
 
+    if( strncmp(line, "feedback", 8) == 0 ) {
+      line += 8;
+      line += strspn(line, ws);
+      line[strcspn(line, ws)] = '\0';
+
+      if(strcmp(line, "off") == 0)
+	feedback = False;
+      if(strcmp(line, "on") == 0)
+        feedback = True;
+
+      continue;
+    }
+
     if( strncmp(line, "delay", 5) == 0 ) {
       line += 5;
       line += strspn(line, ws);
@@ -296,16 +311,19 @@ void xc_parse_config(XChainKeys_t *self) {
       continue;
     }
 
-    if( strncmp(line, "feedback", 8) == 0 ) {
-      line += 8;
+    if( strncmp(line, "hold", 4) == 0 ) {
+      line += 4;
       line += strspn(line, ws);
       line[strcspn(line, ws)] = '\0';
+      self->hold = (unsigned int)atoi(line);
+      continue;
+    }
 
-      if(strcmp(line, "off") == 0)
-	feedback = False;
-      if(strcmp(line, "on") == 0) 
-        feedback = True;
-
+    if( strncmp(line, "position", 8) == 0 ) {
+      line += 8;
+      line += strspn(line, ws);
+      self->position = (char *) calloc(strlen(line)+1, sizeof(char));
+      self->position = strncpy(self->position, line, strlen(line));
       continue;
     }
 
@@ -472,7 +490,7 @@ void xc_parse_config(XChainKeys_t *self) {
   binding_create_default_bindings(self->root);
 
   /* initialize popup window */
-  self->popup = popup_new(self->display, font, fg, bg);
+  self->popup = popup_new(self->display, font, fg, bg, self->position);
   self->popup->enabled = feedback;
 
   /* display settings and chains on stdout */
@@ -483,6 +501,8 @@ void xc_parse_config(XChainKeys_t *self) {
     if (feedback) { 
       printf("feedback on\n");
       printf("delay %d\n", self->delay);
+      printf("hold %d\n", self->hold);
+      printf("position %s\n", self->position);
       printf("font %s\n", font);
       printf("foreground %s\n", fg);
       printf("background %s\n\n", bg);
@@ -525,10 +545,10 @@ void xc_mainloop(XChainKeys_t *self) {
     if (xc->popup->timeout > 0) {
 
         FD_ZERO(&in);
-        FD_SET(xc->conn_fd, &in);
+        FD_SET(xc->connection, &in);
         tv.tv_sec = xc->popup->timeout / 1000;
         tv.tv_usec = (xc->popup->timeout % 1000) * 1000;
-        if (!select(xc->conn_fd + 1, &in, 0, 0, &tv)) {
+        if (!select(xc->connection + 1, &in, 0, 0, &tv)) {
             popup_hide(xc->popup);
             xc->popup->timeout = 0;
         }
