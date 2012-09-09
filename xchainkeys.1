@@ -136,14 +136,17 @@ default.
 This feature is implemented using \fBXSendEvent(3)\fP. Note that
 applications may refuse to accept synthetic events generated with
 \fBXSendEvent\fP.
-.IP \fB:exec\fP\ \fI<command>\fP
-Asynchronously execute \fIcommand\fP as a shell command. 
+.IP \fB:exec\fP\ [\fBabort=\fP\fIauto\fP]\ \fI<command>\fP
+Asynchronously execute \fIcommand\fP as a shell command. If
+\fBabort=\fP\fIauto\fP is given, this binding will always abort the
+current chain after executing the command, even if the chain was
+entered with \fBabort=\fP\fImanual\fP.
 .IP \fB:wait\fP\ \fI<command>\fP
 Ungrab the keyboard, execute \fIcommand\fP as a shell command, wait
 until the \fIcommand\fP has completed and grab the keyboard again if
 necessary. Use this action to run commands that also grab the keyboard
 (e.g. \fIscrot --select\fP).
-.IP \fB:group\fP\ \fB[\fP"\fI<name>\fP"\fB]\fP\ \fI<command>\fP
+.IP \fB:group\fP\ \fB[\fP"\fI<name>\fP"\fB]\fP\ [\fBabort=\fP\fIauto\fP]\ \fI<command>\fP
 Associate a binding with a named group and asynchronously execute
 \fIcommand\fP as a shell command.
 
@@ -152,12 +155,18 @@ are disabled for the current chain prefix, and only bindings in the
 same group will be recognized for subsequent key presses. Any other
 keys will abort the chain and revert the above changes.
 
+If \fBabort=\fP\fIauto\fP is given for particular binding within a
+group, this binding will always abort the current chain after
+executing the command, effectively overriding the implied
+\fBabort=\fP\fImanual\fP option.
+
 In addition, if the key used to abort the chain key is a toplevel
 chain \fBprefix key\fP, the corresponding chain will be entered
 immediately after this chain aborts. See \fBEXAMPLES\fP below for
 possible uses.
 
 If no explicit name is given, the group name "default" is used.
+
 .IP \fB:repeat\fP\ \fI<command>\fP
 Deprecated. Equivalent to \fB:group\fP \fB"default"\fP.
 .IP \fB:load\fP\ [\fI<filename>\fP]
@@ -228,7 +237,7 @@ http://code.google.com/p/xchainkeys/issues
 Use the email address below for questions, feature requests and
 comments.
 .SH COPYRIGHT
-Copyright (C) 2010, 2011 Henning Bekel <h.bekel@googlemail.com>
+Copyright (C) 2010-2012 Henning Bekel <h.bekel@googlemail.com>
 .SH LICENSE
 xchainkeys is licensed under the GNU General Public License v3, see
 http://www.gnu.org/licenses/gpl.html.

@@ -69,17 +69,21 @@ void binding_parse_arguments(Binding_t *self) {
   char *ws = " \t";
   int i;
   
-  if(self->action == XC_ACTION_ENTER) {
-    
+  if(self->action == XC_ACTION_ENTER)
     self->timeout = xc->timeout;
+
+  if(self->action != XC_ACTION_ENTER)
+    self->abort = XC_ABORT_MANUAL;
     
-    argument = (char *) calloc(strlen(self->argument)+1, sizeof(char));
-    argument_ptr = argument;
+  argument = (char *) calloc(strlen(self->argument)+1, sizeof(char));
+  argument_ptr = argument;
     
-    strncpy(argument, self->argument, strlen(self->argument)+1);
+  strncpy(argument, self->argument, strlen(self->argument)+1);
+  
+  while(strlen(argument)) {
+
+    if(self->action == XC_ACTION_ENTER) { // parse timeout value only for :enter
     
-    while(strlen(argument)) {
-      
       if(strncmp(argument, "timeout=", 8) == 0) {
 	
 	value = (char *) calloc(strlen(argument)+1, sizeof(char));
@@ -97,37 +101,37 @@ void binding_parse_arguments(Binding_t *self) {
 	free(value_ptr);
 	continue;
       }
-      
-      if(strncmp(argument, "abort=", 6) == 0) {
-	
-	value = (char *) calloc(strlen(argument)+1, sizeof(char));
-	value_ptr = value;
-	
-	strncpy(value, argument, strlen(argument)+1);
-	value += 6;
-	value[strcspn(value, ws)] = '\0';
-	
-	if(strcmp(value, "auto") == 0) 
-	  self->abort = XC_ABORT_AUTO;
-	
-	if(strcmp(value, "manual") == 0)
-	  self->abort = XC_ABORT_MANUAL;
-	
-	argument += 6 + strlen(value);
-	argument += strspn(argument, ws);
-	
-	free(value_ptr);
-	continue;
-      }
-      /* skip unparsed words */
-      argument += strcspn(argument, ws);      
-      argument += strspn(argument, ws);      
-      
-      if(strcspn(argument, ws) == 0)
-	break;
     }
-    free(argument_ptr);
+    
+    if(strncmp(argument, "abort=", 6) == 0) { // parse abort for any action
+      
+      value = (char *) calloc(strlen(argument)+1, sizeof(char));
+      value_ptr = value;
+      
+      strncpy(value, argument, strlen(argument)+1);
+      value += 6;
+      value[strcspn(value, ws)] = '\0';
+      
+      if(strcmp(value, "auto") == 0) 
+	self->abort = XC_ABORT_AUTO;
+      
+      if(strcmp(value, "manual") == 0)
+	self->abort = XC_ABORT_MANUAL;
+      
+      argument += 6 + strlen(value);
+      argument += strspn(argument, ws);
+      
+      free(value_ptr);
+      continue;
+    }
+    /* skip unparsed words */
+    argument += strcspn(argument, ws);      
+    argument += strspn(argument, ws);      
+    
+    if(strcspn(argument, ws) == 0)
+      break;
   }
+  free(argument_ptr);
 
   /* recurse into children and parse their arguments as well */
   for( i=0; i<self->num_children; i++ ) {
@@ -382,6 +386,10 @@ void binding_enter(Binding_t *self) {
 	    
 	    /* ... or activate the binding */
 	    binding_activate(binding);
+
+	    /* check if the binding overrides abort in a manual chain */
+	    if(self->abort == XC_ABORT_MANUAL && binding->abort == XC_ABORT_AUTO)
+	      done = True;
 	  }
 	  else {
 	    keyspec = key_to_str(key);
@@ -493,10 +501,13 @@ void binding_group(Binding_t *self) {
 	    
 	    if(binding->action != XC_ACTION_ESCAPE)
 	      abort = False;
+	    if(binding->abort == XC_ABORT_AUTO)
+	      abort = True;
 	    break;
 	  }
 	  abort = True;
 	}
+
 	if(abort) {
 	  /* if the aborting key matches any root :enter bindings,
 	   * prepare immediate re-entry into that chain from

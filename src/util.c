@@ -10,7 +10,7 @@
 extern XChainKeys_t *xc;
 
 void version() {
-  printf("%s %s Copyright (C) 2010, 2011 Henning Bekel <%s>\n",
+  printf("%s %s Copyright (C) 2010-2012 Henning Bekel <%s>\n",
 	 PACKAGE_NAME, PACKAGE_VERSION, PACKAGE_BUGREPORT);
 
   printf("License GPLv3: GNU GPL version 3 <http://gnu.org/licenses/gpl.html>\n\n");
