@@ -1,0 +1,10 @@
+autom4te.cache/*
+*Makefile
+config.log
+config.status
+*.tar.gz
+
+src/*.o
+src/*.o.*
+src/.deps/*
+src/xchainkeys

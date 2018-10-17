@@ -10,6 +10,16 @@ AM_INIT_AUTOMAKE
 AC_PROG_CC
 AC_PROG_SED
 
+# Make sure headers and libs are found on BSD as well.
+CFLAGS="-I/usr/local/include $CFLAGS"
+CPPFLAGS="-I/usr/local/include $CPPFLAGS"
+LDFLAGS="-L/usr/local/lib $LDFLAGS"
+
+# Checks for headers.
+AC_CHECK_HEADER(X11/Xlib.h,,
+  AC_MSG_ERROR([Could not find X11/Xlib.h])
+)
+
 # Checks for libraries.
 AC_CHECK_LIB(X11, XOpenDisplay,
   LIBS="$LIBS -lX11",
