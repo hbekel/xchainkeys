@@ -245,7 +245,15 @@ void binding_activate(Binding_t *self) {
   switch(self->action) {
 
   case XC_ACTION_ENTER:
+    if (xc->track) {
+        printf("TRACK enter\n");
+	fflush(stdout);
+    }
     binding_enter(self);
+    if (xc->track) {
+        printf("TRACK exit\n");
+	fflush(stdout);
+    }
     break;
 
   case XC_ACTION_ESCAPE:
@@ -261,7 +269,15 @@ void binding_activate(Binding_t *self) {
     break;
 
   case XC_ACTION_GROUP:
+    if (xc->track) {
+        printf("TRACK group enter %s\n", self->name);
+	fflush(stdout);
+    }
     binding_group(self);
+    if (xc->track) {
+        printf("TRACK group exit %s\n", self->name);
+	fflush(stdout);
+    }
     break;
 
   case XC_ACTION_LOAD:
@@ -277,6 +293,9 @@ int binding_wait_event(Binding_t *self) {
     struct timeval tv1, tv2, *delay_tv, *timeout_tv;
     fd_set in;
     int ignore_delay = False;
+
+    if (XPending(xc->display))
+        return True;
 
     if (xc->delay > 0) {
         if (self->timeout > 0 && xc->delay > self->timeout) {
