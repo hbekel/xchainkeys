@@ -59,6 +59,7 @@ XChainKeys_t* xc_new() {
   XSetErrorHandler(xc_handle_error);
 
   self->debug = False;
+  self->track = False;
   self->timeout = 3000;
   self->delay = 1000;
   self->hold = -1;
@@ -622,13 +623,14 @@ void xc_parse_options(XChainKeys_t *self, int argc, char **argv) {
     { "version", no_argument, NULL, 'v' },
     { "keys", no_argument, NULL, 'k' },
     { "file", no_argument, NULL, 'f' },
+    { "track", no_argument, NULL, 't' },
     { 0, 0, 0, 0 },
   };
   int option, option_index;
 
   while (1) {
 
-    option = getopt_long(argc, argv, "dhvkf:", options, &option_index);
+    option = getopt_long(argc, argv, "dhvkf:t", options, &option_index);
     
     switch (option) {
 
@@ -641,6 +643,12 @@ void xc_parse_options(XChainKeys_t *self, int argc, char **argv) {
       xc_show_keys(self);
       exit(EXIT_SUCCESS);
 
+    case 't':
+      self->track = True;
+      version();
+      printf("\n"); fflush(stdout);
+      break;
+      
     case 'd':
       self->debug = True;
       version();

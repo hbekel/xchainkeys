@@ -26,6 +26,7 @@ void usage() {
   printf("  -f, --file    : alternative config file\n");
   printf("  -k, --keys    : Show valid keyspecs\n");
   printf("  -d, --debug   : Enable debug messages\n");
+  printf("  -t, --track   : Track entry/exit to stdout\n");
   printf("  -h, --help    : Print this help text\n");
   printf("  -v, --version : Print version information\n");
   printf("\n");
